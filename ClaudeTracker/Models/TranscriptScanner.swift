@@ -72,8 +72,9 @@ enum TranscriptScanner {
         let model = (message["model"] as? String) ?? "unknown"
         let sessionID = (obj["sessionId"] as? String) ?? "unknown"
         let ts = (obj["timestamp"] as? String).flatMap(parseDate) ?? Date()
+        let project = (obj["cwd"] as? String).map { URL(filePath: $0).lastPathComponent } ?? "unknown"
 
-        index.record(counts: counts, timestamp: ts, sessionID: sessionID, model: model)
+        index.record(counts: counts, timestamp: ts, sessionID: sessionID, model: model, project: project)
     }
 
     private static func intVal(_ any: Any?) -> Int {

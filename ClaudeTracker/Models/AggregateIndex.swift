@@ -11,9 +11,12 @@ struct AggregateIndex: Codable, Sendable {
     /// All-time totals, keyed by exact model id.
     var total = ModelBreakdown()
 
-    /// Local-day key ("yyyy-MM-dd") -> that day's breakdown. Pruned to a small
-    /// rolling window since all we surface is "today".
+    /// Local-day key ("yyyy-MM-dd") -> that day's breakdown. Retained long-term
+    /// for the dashboard's trend charts.
     var byDay: [String: ModelBreakdown] = [:]
+
+    /// Project name (cwd leaf) -> all-time breakdown, for the Projects table.
+    var byProject: [String: ModelBreakdown] = [:]
 
     /// sessionId -> per-session info. Pruned to recent sessions.
     var sessions: [String: SessionInfo] = [:]
@@ -37,11 +40,12 @@ struct AggregateIndex: Codable, Sendable {
 
     // MARK: Mutation
 
-    mutating func record(counts: TokenCounts,
-                         timestamp: Date, sessionID: String, model: String) {
+    mutating func record(counts: TokenCounts, timestamp: Date,
+                         sessionID: String, model: String, project: String) {
         total.add(counts, model: model)
         byDay[AggregateIndex.dayKey(for: timestamp), default: ModelBreakdown()]
             .add(counts, model: model)
+        byProject[project, default: ModelBreakdown()].add(counts, model: model)
         var s = sessions[sessionID] ?? SessionInfo()
         s.breakdown.add(counts, model: model)
         if timestamp >= s.lastTimestamp {
@@ -51,15 +55,26 @@ struct AggregateIndex: Codable, Sendable {
         sessions[sessionID] = s
     }
 
-    /// Drop day buckets and sessions older than a couple of days so the cache
-    /// stays small. `total` already retains the all-time numbers.
+    /// Keep ~13 months of daily history for charts; prune only stale sessions.
     mutating func prune(now: Date = Date()) {
-        let keepDays = Set((0...2).map {
+        let keepDays = Set((0...400).map {
             AggregateIndex.dayKey(for: now.addingTimeInterval(Double(-$0) * 86_400))
         })
         byDay = byDay.filter { keepDays.contains($0.key) }
         let cutoff = now.addingTimeInterval(-2 * 86_400)
         sessions = sessions.filter { $0.value.lastTimestamp >= cutoff }
+    }
+
+    // MARK: Dashboard views
+
+    /// Daily token totals, oldest → newest, for the last `days` days.
+    func dailySeries(days: Int, now: Date = Date()) -> [(date: Date, breakdown: ModelBreakdown)] {
+        (0..<days).reversed().compactMap { offset in
+            let date = now.addingTimeInterval(Double(-offset) * 86_400)
+            let key = AggregateIndex.dayKey(for: date)
+            guard let b = byDay[key] else { return (date, ModelBreakdown()) }
+            return (date, b)
+        }
     }
 
     // MARK: Helpers

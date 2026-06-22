@@ -71,6 +71,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
+        let dash = addAction("Open Dashboard…", #selector(openDashboard), to: menu)
+        dash.keyEquivalent = "d"
         let settings = addAction("Settings…", #selector(openSettings), to: menu)
         settings.keyEquivalent = ","
         addHeader("Version \(AppInfo.version)", to: menu)
@@ -117,6 +119,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func refreshNow() { Task { await usage.refresh() } }
     @objc private func quit() { NSApp.terminate(nil) }
     private var settingsWindow: NSWindow?
+    private var dashboardWindow: NSWindow?
+
+    @objc private func openDashboard() {
+        if dashboardWindow == nil {
+            let w = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 860, height: 600),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                backing: .buffered, defer: false)
+            w.title = "\(AppInfo.name) Dashboard"
+            w.isReleasedWhenClosed = false
+            w.center()
+            w.contentView = NSHostingView(rootView: DashboardView(usage: usage, pricing: pricing))
+            dashboardWindow = w
+        }
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        dashboardWindow?.makeKeyAndOrderFront(nil)
+    }
 
     @objc private func openSettings() {
         if settingsWindow == nil {
