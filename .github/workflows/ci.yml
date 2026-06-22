@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build (Release, ad-hoc signed)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ClaudeTracker.xcodeproj \
+            -scheme ClaudeTracker \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Verify code signature
+        run: |
+          APP="build/Build/Products/Release/Anthrocite.app"
+          codesign -dv --verbose=2 "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
+      - name: Package (zip)
+        run: ditto -c -k --keepParent "build/Build/Products/Release/Anthrocite.app" "Anthrocite.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Anthrocite-app
+          path: Anthrocite.zip
+          if-no-files-found: error

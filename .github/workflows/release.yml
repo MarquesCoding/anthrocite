@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect signing secrets
+        id: secrets
+        run: echo "signed=${{ secrets.MACOS_CERTIFICATE != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build (Release)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ClaudeTracker.xcodeproj \
+            -scheme ClaudeTracker \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      # ---- Developer ID signing + notarization (only when secrets are configured) ----
+      # Add these repo secrets to enable: MACOS_CERTIFICATE (base64 .p12),
+      # MACOS_CERTIFICATE_PWD, MACOS_SIGN_IDENTITY (e.g. "Developer ID Application: Name (TEAMID)"),
+      # AC_APPLE_ID, AC_TEAM_ID, AC_PASSWORD (app-specific password).
+      - name: Sign & notarize
+        if: steps.secrets.outputs.signed == 'true'
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          AC_APPLE_ID: ${{ secrets.AC_APPLE_ID }}
+          AC_TEAM_ID: ${{ secrets.AC_TEAM_ID }}
+          AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release/Anthrocite.app"
+          KEYCHAIN="$RUNNER_TEMP/build.keychain"
+          security create-keychain -p actions "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p actions "$KEYCHAIN"
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions "$KEYCHAIN"
+          codesign --force --options runtime --timestamp \
+            --sign "$MACOS_SIGN_IDENTITY" --deep "$APP"
+          ditto -c -k --keepParent "$APP" "Anthrocite-notarize.zip"
+          xcrun notarytool submit "Anthrocite-notarize.zip" \
+            --apple-id "$AC_APPLE_ID" --team-id "$AC_TEAM_ID" --password "$AC_PASSWORD" --wait
+          xcrun stapler staple "$APP"
+
+      - name: Create DMG
+        run: |
+          APP="build/Build/Products/Release/Anthrocite.app"
+          hdiutil create -volname "Anthrocite" -srcfolder "$APP" -ov -format UDZO "Anthrocite.dmg"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Anthrocite.dmg
+          generate_release_notes: true
