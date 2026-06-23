@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        HookInstaller.installIfNeeded()
         stores.start()
         NSApp.setActivationPolicy(.accessory)
 

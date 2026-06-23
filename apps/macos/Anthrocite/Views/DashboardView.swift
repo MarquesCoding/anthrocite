@@ -184,6 +184,7 @@ private struct ModelsPane: View {
 
 private struct GeneralPane: View {
     @State private var launchAtLogin = LoginItem.isEnabled
+    @State private var hooksInstalled = HookInstaller.isInstalled
     @AppStorage(Prefs.showStatusKey) private var showStatus = true
     @AppStorage(Prefs.showTimerKey) private var showTimer = true
 
@@ -197,6 +198,19 @@ private struct GeneralPane: View {
                 Toggle("Show status text", isOn: $showStatus)
                 Toggle("Show timer", isOn: $showTimer).disabled(!showStatus)
             }
+            Section {
+                LabeledContent("Status") {
+                    Label(hooksInstalled ? "Installed" : "Not installed",
+                          systemImage: hooksInstalled ? "checkmark.circle.fill" : "exclamationmark.circle")
+                        .foregroundStyle(hooksInstalled ? Color.green : Color.secondary)
+                        .labelStyle(.titleAndIcon)
+                }
+                Button(hooksInstalled ? "Reinstall hooks" : "Install hooks") {
+                    HookInstaller.install()
+                    hooksInstalled = HookInstaller.isInstalled
+                }
+            } header: { Text("Claude Code integration") }
+            footer: { Text("Installs the statusLine bridge and SessionEnd hook into ~/.claude/settings.json so Anthrocite can read live session data.") }
         }
         .formStyle(.grouped)
         .navigationTitle("General")
