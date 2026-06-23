@@ -90,8 +90,8 @@ function Hero({ slotRef, inHero }: { slotRef: React.RefObject<HTMLDivElement | n
           <span className="bg-gradient-to-b from-white via-white to-white/35 bg-clip-text text-transparent">One glance.</span>
         </motion.h1>
         <motion.p variants={item} className="mx-auto mt-7 max-w-lg text-lg text-white/55">
-          Live status, usage, cost and your real rate limits for Claude Code —
-          right in your menu bar, in real time.
+          Live status, usage, cost and your real rate limits for Claude Code &amp;
+          Codex — right in your menu bar, in real time.
         </motion.p>
         <motion.div ref={slotRef} variants={item} className="mt-8 flex min-h-[52px] items-center justify-center">
           {inHero && <Cta />}
