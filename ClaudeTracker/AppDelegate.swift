@@ -28,6 +28,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         menu.autoenablesItems = false
         statusItem.menu = menu
+        // Monospaced digits so the ticking timer doesn't resize the item.
+        if let f = statusItem.button?.font {
+            statusItem.button?.font = NSFont.monospacedDigitSystemFont(ofSize: f.pointSize, weight: .regular)
+        }
         refreshButton()
 
         tick = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -109,19 +113,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: Status-bar button
 
+    /// The menu-bar logo, sized to 16pt and rendered as a template (auto-tinted).
+    private static let menuBarImage: NSImage? = {
+        guard let base = NSImage(named: "MenuBarLogo"), let img = base.copy() as? NSImage else { return nil }
+        let h: CGFloat = 13.5
+        img.size = NSSize(width: img.size.height > 0 ? h * (img.size.width / img.size.height) : h, height: h)
+        img.isTemplate = true
+        return img
+    }()
+
+    private var lastTitleKey = ""
+
     private func refreshButton() {
         guard let button = statusItem.button, !menuOpen else { return }
-        let cfg = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
-        button.image = NSImage(systemSymbolName: "gauge.with.dots.needle.bottom.50percent",
-                               accessibilityDescription: AppInfo.name)?.withSymbolConfiguration(cfg)
+        button.image = Self.menuBarImage
 
-        if let title = showStatus ? menuTitle() : nil {
-            button.title = " " + title
-            button.imagePosition = .imageLeading
-        } else {
-            button.title = ""
-            button.imagePosition = .imageOnly
+        let title = showStatus ? menuTitle() : nil
+        // Key ignores the ticking "Ns" so the timer updates smoothly without a
+        // fade every second; we only animate real state changes.
+        let key = title.map { $0.replacingOccurrences(of: #"\s+\d+s$"#, with: "", options: .regularExpression) } ?? "<idle>"
+        let animate = key != lastTitleKey && !lastTitleKey.isEmpty
+        lastTitleKey = key
+
+        let apply = {
+            button.title = title.map { " " + $0 } ?? ""
+            button.imagePosition = title == nil ? .imageOnly : .imageLeading
         }
+
+        guard animate else { apply(); return }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.16
+            button.animator().alphaValue = 0
+        }, completionHandler: {
+            apply()
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.16
+                button.animator().alphaValue = 1
+            }
+        })
     }
 
     private func menuTitle() -> String? {
@@ -131,7 +160,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case 1:
             let s = working[0]
             if showTimer, let since = s.activeSince {
-                return "\(s.statusText) \(max(0, Int(Date().timeIntervalSince(since))))s"
+                let secs = max(0, Int(Date().timeIntervalSince(since)))
+                return "\(s.statusText) \(String(format: "%2d", secs))s"
             }
             return s.statusText
         default: return "\(working.count) working"

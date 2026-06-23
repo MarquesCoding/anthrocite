@@ -74,19 +74,32 @@ private struct OverviewPane: View {
     @ObservedObject var usage: UsageStore
     @ObservedObject var pricing: PricingStore
 
-    var body: some View {
-        let table = pricing.table
-        let s30 = series(usage, table, days: 30)
-        let week = s30.suffix(7)
+    // Stable snapshot so scrolling (which re-evaluates the body) doesn't
+    // recompute the charts and retrigger their animations.
+    @State private var s30: [DailyPoint] = []
+    @State private var allTimeTokens = 0
+    @State private var allTimeCost = 0.0
+    @State private var weekTokens = 0
+    @State private var todayTokens = 0
 
+    private func recompute() {
+        let table = pricing.table
+        s30 = series(usage, table, days: 30)
+        allTimeTokens = usage.index.total.totalTokens
+        allTimeCost = usage.index.total.totalCost(table)
+        weekTokens = s30.suffix(7).reduce(0) { $0 + $1.tokens }
+        todayTokens = usage.index.todayBreakdown.totalTokens
+    }
+
+    var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Grid(horizontalSpacing: 12, verticalSpacing: 12) {
                     GridRow {
-                        MetricCard(title: "All-time tokens", value: Fmt.tokens(usage.index.total.totalTokens), icon: "number")
-                        MetricCard(title: "All-time cost", value: Fmt.usd(usage.index.total.totalCost(table)), icon: "dollarsign.circle")
-                        MetricCard(title: "This week", value: Fmt.tokens(week.reduce(0) { $0 + $1.tokens }), icon: "calendar")
-                        MetricCard(title: "Today", value: Fmt.tokens(usage.index.todayBreakdown.totalTokens), icon: "sun.max")
+                        MetricCard(title: "All-time tokens", value: Fmt.tokens(allTimeTokens), icon: "number")
+                        MetricCard(title: "All-time cost", value: Fmt.usd(allTimeCost), icon: "dollarsign.circle")
+                        MetricCard(title: "This week", value: Fmt.tokens(weekTokens), icon: "calendar")
+                        MetricCard(title: "Today", value: Fmt.tokens(todayTokens), icon: "sun.max")
                     }
                 }
 
@@ -118,6 +131,9 @@ private struct OverviewPane: View {
             .padding(20)
         }
         .navigationTitle("Overview")
+        .onAppear(perform: recompute)
+        .onChange(of: usage.lastUpdated) { _, _ in recompute() }
+        .onChange(of: pricing.table) { _, _ in recompute() }
     }
 }
 
@@ -222,17 +238,74 @@ private struct PricingPane: View {
 
 private struct AboutPane: View {
     var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "gauge.with.dots.needle.bottom.50percent")
-                .font(.system(size: 52)).foregroundStyle(.tint)
-            Text(AppInfo.name).font(.largeTitle.weight(.semibold))
-            Text("Version \(AppInfo.version) (\(AppInfo.build))").foregroundStyle(.secondary)
-            Text(AppInfo.tagline).foregroundStyle(.secondary)
-            Link("Website", destination: AppInfo.website)
-            Text("\(AppInfo.license)").font(.caption).foregroundStyle(.tertiary)
+        ScrollView {
+            VStack(spacing: 18) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable().frame(width: 96, height: 96)
+                    .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
+
+                VStack(spacing: 5) {
+                    Text(AppInfo.name).font(.largeTitle.weight(.bold))
+                    Text(AppInfo.tagline).foregroundStyle(.secondary)
+                    Text("Version \(AppInfo.version) (\(AppInfo.build))")
+                        .font(.caption).foregroundStyle(.tertiary)
+                }
+
+                Link(destination: AppInfo.website) {
+                    Label("anthrocite.app", systemImage: "globe")
+                }
+                .buttonStyle(.bordered)
+
+                GroupBox {
+                    VStack(spacing: 0) {
+                        ForEach(Array(AppInfo.credits.enumerated()), id: \.element.id) { i, c in
+                            if i > 0 { Divider() }
+                            creditRow(c)
+                        }
+                    }
+                } label: {
+                    Label("Credits", systemImage: "heart")
+                }
+                .frame(maxWidth: 420)
+
+                Text(AppInfo.acknowledgement)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                Text("© 2026 Marques · \(AppInfo.license)")
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+            .padding(30)
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle("About")
+    }
+
+    private func creditRow(_ c: AppInfo.Credit) -> some View {
+        Link(destination: c.url) {
+            HStack(spacing: 12) {
+                AsyncImage(url: c.avatarURL) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        Image(systemName: "person.circle.fill")
+                            .resizable().foregroundStyle(.tertiary)
+                    }
+                }
+                .frame(width: 38, height: 38)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(.separator, lineWidth: 0.5))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(c.name).fontWeight(.medium)
+                    Text(c.role).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(c.handle).font(.callout).foregroundStyle(.secondary)
+                Image(systemName: "arrow.up.right.square").foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
