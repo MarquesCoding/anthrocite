@@ -39,10 +39,17 @@ struct PricingTable: Sendable, Equatable {
     }
 
     static var bundled: PricingTable {
+        func mtok(_ i: Double, _ o: Double, _ cr: Double) -> ModelPricing {
+            ModelPricing(input: i/1e6, output: o/1e6, cacheWrite: 0, cacheRead: cr/1e6)
+        }
         var t = PricingTable()
         t.byModel["claude-opus"] = fallback(for: .opus)
         t.byModel["claude-sonnet"] = fallback(for: .sonnet)
         t.byModel["claude-haiku"] = fallback(for: .haiku)
+        // OpenAI / Codex fallbacks (LiteLLM provides exact rates when online).
+        t.byModel["gpt-5-codex"] = mtok(1.25, 10, 0.125)
+        t.byModel["gpt-5"] = mtok(1.25, 10, 0.125)
+        t.byModel["gpt"] = mtok(2.5, 10, 0.25)
         return t
     }
 }
@@ -83,7 +90,9 @@ final class PricingStore: ObservableObject {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         var table = PricingTable.bundled
         for (name, value) in root {
-            guard name.lowercased().contains("claude"),
+            let n = name.lowercased()
+            guard n.contains("claude") || n.contains("gpt") || n.contains("codex")
+                    || n.hasPrefix("o1") || n.hasPrefix("o3") || n.hasPrefix("o4"),
                   let m = value as? [String: Any],
                   let inCost = (m["input_cost_per_token"] as? NSNumber)?.doubleValue,
                   let outCost = (m["output_cost_per_token"] as? NSNumber)?.doubleValue else { continue }

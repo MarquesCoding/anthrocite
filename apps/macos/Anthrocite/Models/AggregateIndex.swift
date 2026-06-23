@@ -18,6 +18,11 @@ struct AggregateIndex: Codable, Sendable {
     /// Project name (cwd leaf) -> all-time breakdown, for the Projects table.
     var byProject: [String: ModelBreakdown] = [:]
 
+    /// Codex rollout files keep cwd/model in records separate from the token
+    /// counts, so we remember them per file while scanning incrementally.
+    var codexProject: [String: String] = [:]
+    var codexModel: [String: String] = [:]
+
     /// sessionId -> per-session info. Pruned to recent sessions.
     var sessions: [String: SessionInfo] = [:]
 
