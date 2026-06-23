@@ -44,7 +44,7 @@ export default function App() {
 }
 
 /* The single CTA pair that morphs between the hero and the nav via layoutId. */
-const swing = { duration: 0.62, ease: "anticipate" as const };
+const swing = { type: "spring" as const, stiffness: 380, damping: 32 };
 
 function Cta({ compact = false }: { compact?: boolean }) {
   const pad = compact ? "py-1.5 text-sm" : "py-3.5 text-[15px]";
@@ -176,7 +176,7 @@ function DesktopMock() {
 
       {/* dock */}
       <div className="absolute inset-x-0 bottom-3 flex justify-center">
-        <div className="flex items-center gap-2 rounded-[20px] border border-white/15 bg-zinc-800/85 px-2.5 py-2 shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-2 rounded-[20px] border border-white/15 bg-[#26262b] px-2.5 py-2 shadow-2xl">
           <div className="flex flex-col items-center">
             <img src="/icon.png" alt="Anthrocite" className="h-12 w-12 rounded-[12px] shadow-md" />
             <span className="mt-1 h-1 w-1 rounded-full bg-white/70" />
