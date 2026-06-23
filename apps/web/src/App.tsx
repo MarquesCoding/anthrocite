@@ -42,7 +42,7 @@ function Nav() {
     <header className="fixed inset-x-0 top-4 z-50 px-4">
       <div className="mx-auto flex h-12 max-w-2xl items-center justify-between rounded-full border border-white/10 bg-white/[0.04] px-4 backdrop-blur-xl">
         <a href="#" className="flex items-center gap-2">
-          <img src="/icon.svg" alt="" className="h-6 w-6 rounded-md" />
+          <img src="/logo.svg" alt="" className="h-5 w-auto" />
           <span className="text-[15px] font-semibold tracking-tight">Anthrocite</span>
         </a>
         <div className="flex items-center gap-1">
@@ -57,21 +57,22 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="px-6 pt-36 pb-10 text-center">
+    <section className="relative px-6 pt-36 text-center">
       <motion.div variants={container} initial="hidden" animate="show">
-        <motion.p variants={item} className="mb-5 text-sm font-medium text-white/45">
+        <motion.div variants={item} className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[13px] text-white/60">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           Free &amp; open source · macOS 15+
-        </motion.p>
-        <motion.h1 variants={item} className="mx-auto max-w-4xl text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
-          Your AI coding agents,
+        </motion.div>
+        <motion.h1 variants={item} className="mx-auto max-w-5xl text-[15vw] font-semibold leading-[0.92] tracking-[-0.04em] sm:text-[112px]">
+          Every agent.
           <br />
-          at a glance.
+          <span className="bg-gradient-to-b from-white via-white to-white/35 bg-clip-text text-transparent">One glance.</span>
         </motion.h1>
-        <motion.p variants={item} className="mx-auto mt-6 max-w-xl text-lg text-white/55">
-          Anthrocite lives in your menu bar — live status, usage, cost and your real
-          rate limits, across every session, in real time.
+        <motion.p variants={item} className="mx-auto mt-7 max-w-lg text-lg text-white/55">
+          Live status, usage, cost and your real rate limits for Claude Code —
+          right in your menu bar, in real time.
         </motion.p>
-        <motion.div variants={item} className="mt-9 flex flex-wrap items-center justify-center gap-3">
+        <motion.div variants={item} className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
             <IconBrandApple size={19} /> Download for macOS
           </a>
@@ -85,10 +86,20 @@ function Hero() {
         variants={item}
         initial="hidden"
         animate="show"
-        transition={{ delay: 0.35, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto mt-16 max-w-5xl"
+        transition={{ delay: 0.4, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        className="relative mx-auto mt-24 max-w-6xl"
       >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-24 -top-32 bottom-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(55% 45% at 45% 35%, rgba(124,92,255,0.45), transparent 70%), radial-gradient(45% 40% at 70% 55%, rgba(42,108,244,0.40), transparent 70%)",
+            filter: "blur(30px)",
+          }}
+        />
         <DesktopMock />
+        <div className="pointer-events-none absolute inset-x-0 -bottom-px h-48 bg-gradient-to-b from-transparent to-[#0a0b0e]" />
       </motion.div>
     </section>
   );
@@ -98,22 +109,28 @@ function Hero() {
    wallpaper. Drop /hero-bg.jpg into public to use a real wallpaper. */
 function DesktopMock() {
   return (
-    <div className="relative overflow-hidden rounded-[20px] border border-white/10 shadow-[0_50px_120px_-30px_rgba(0,0,0,0.7)]">
-      {/* wallpaper */}
-      <div
-        className="aspect-[16/10] w-full"
-        style={{
-          backgroundColor: "#1a1030",
-          backgroundImage:
-            "url('/hero-bg.jpg'), radial-gradient(60% 80% at 20% 20%, #5b3aa6 0%, transparent 60%), radial-gradient(60% 80% at 80% 70%, #2a6cf4 0%, transparent 55%), radial-gradient(50% 60% at 60% 30%, #d36ad8 0%, transparent 55%)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
+    <div className="relative overflow-hidden rounded-[22px] border border-white/15 shadow-[0_60px_140px_-30px_rgba(0,0,0,0.85)]">
+      {/* wallpaper: iridescent discs (drop /hero-bg.jpg in public to override) */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden" style={{ background: "linear-gradient(150deg,#1d1233,#0d0a1b 70%)" }}>
+        <div
+          className="absolute left-[10%] top-1/2 h-[72%] w-[44%] -translate-y-1/2 rounded-full opacity-90"
+          style={{ background: "conic-gradient(from 210deg, #ff7ad5, #b18bff, #6aa8ff, #6ff0e0, #c8ff7a, #ffd36a, #ff7ad5)", filter: "blur(16px)" }}
+        />
+        <div
+          className="absolute right-[8%] top-1/2 h-[80%] w-[48%] -translate-y-1/2 rotate-12 rounded-full opacity-90"
+          style={{ background: "conic-gradient(from 30deg, #6aa8ff, #b18bff, #ff7ad5, #ffd36a, #6ff0e0, #6aa8ff)", filter: "blur(16px)" }}
+        />
+        <img
+          src="/hero-bg.jpg"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+      </div>
       {/* menu bar */}
       <div className="absolute inset-x-0 top-0 flex h-8 items-center justify-end gap-4 bg-black/20 px-4 text-[13px] text-white backdrop-blur-sm">
         <span className="flex items-center gap-1.5 font-medium">
-          <img src="/icon.svg" className="h-3.5 w-3.5 rounded-[3px]" /> Editing 12s
+          <img src="/logo.svg" alt="" className="h-3 w-auto" /> Editing 12s
         </span>
         <IconWifi size={15} />
         <IconAdjustmentsHorizontal size={15} />
