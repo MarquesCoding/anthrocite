@@ -117,14 +117,19 @@ final class Updater: ObservableObject {
 
         let dest = Bundle.main.bundleURL.path
         let pid = ProcessInfo.processInfo.processIdentifier
-        // Wait for us to quit, replace the bundle, clear quarantine, relaunch.
+        let lsreg = "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+        // Wait for us to quit, cleanly replace the bundle, refresh LaunchServices,
+        // then relaunch (with a retry — the first open can race the bundle write).
         let script = """
         #!/bin/sh
         while /bin/kill -0 \(pid) 2>/dev/null; do /bin/sleep 0.3; done
+        /bin/sleep 0.5
+        /bin/rm -rf "\(dest)"
         /usr/bin/ditto "\(staged)" "\(dest)"
         /usr/bin/xattr -dr com.apple.quarantine "\(dest)" 2>/dev/null
         /bin/rm -rf "\(staged)"
-        /usr/bin/open "\(dest)"
+        "\(lsreg)" -f "\(dest)" 2>/dev/null
+        /usr/bin/open "\(dest)" || { /bin/sleep 1; /usr/bin/open "\(dest)"; }
         """
         let scriptURL = URL(filePath: NSTemporaryDirectory() + "anthrocite-update.sh")
         try script.write(to: scriptURL, atomically: true, encoding: .utf8)

@@ -1,9 +1,12 @@
 import Foundation
+import os
 
 /// Shared between the app and the widget extension via an App Group. The app
 /// writes a small snapshot on each refresh; the widget reads it to render.
 enum WidgetShared {
-    static let appGroup = "group.app.anthrocite"
+    // macOS requires the App Group id to be Team-ID-prefixed; the bare
+    // "group.app.anthrocite" resolves to nil in the sandboxed widget.
+    static let appGroup = "DG952Y4Q43.group.app.anthrocite"
     static let snapshotName = "widget-snapshot.json"
 
     /// macOS requires the widget extension to be sandboxed, so the only way to
@@ -19,13 +22,23 @@ enum WidgetShared {
     static let encoder = JSONEncoder()
     static let decoder = JSONDecoder()
 
+    private static let log = Logger(subsystem: "app.anthrocite", category: "widget")
+
     static func load() -> WidgetSnapshot {
-        guard let url = snapshotURL,
-              let data = try? Data(contentsOf: url),
-              let snap = try? decoder.decode(WidgetSnapshot.self, from: data) else {
+        guard let url = snapshotURL else {
+            log.error("load: snapshotURL is nil (App Group container unavailable)")
             return .placeholder
         }
-        return snap
+        guard let data = try? Data(contentsOf: url) else {
+            log.error("load: read failed at \(url.path, privacy: .public)")
+            return .placeholder
+        }
+        do {
+            return try decoder.decode(WidgetSnapshot.self, from: data)
+        } catch {
+            log.error("load: decode failed: \(String(describing: error), privacy: .public)")
+            return .placeholder
+        }
     }
 }
 

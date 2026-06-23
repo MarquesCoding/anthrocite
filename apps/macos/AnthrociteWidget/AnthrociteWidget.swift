@@ -76,15 +76,21 @@ private struct Header: View {
 private struct SmallWidget: View {
     let s: WidgetSnapshot
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Header(working: s.workingCount)
-            Spacer(minLength: 0)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(WFmt.usd(s.todayCost)).font(.system(size: 26, weight: .bold)).minimumScaleFactor(0.6).lineLimit(1)
-                Text("\(WFmt.tokens(s.todayTokens)) today").font(.system(size: 12)).foregroundStyle(.secondary)
+        // No wordmark here (it wraps at this width — the OS already labels the
+        // widget); just a status line, the headline cost, and the 5-hour bar.
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 5) {
+                Circle().fill(s.workingCount > 0 ? Color.green : Color.secondary.opacity(0.4))
+                    .frame(width: 6, height: 6)
+                Text(s.workingCount > 0 ? "\(s.workingCount) working" : "idle")
+                    .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                Spacer(minLength: 0)
             }
             Spacer(minLength: 0)
-            if let f = s.fiveHour { LimitBar(title: "5h", limit: f, compact: true) }
+            Text(WFmt.usd(s.todayCost)).font(.system(size: 30, weight: .bold)).minimumScaleFactor(0.5).lineLimit(1)
+            Text("\(WFmt.tokens(s.todayTokens)) today").font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
+            Spacer(minLength: 0)
+            if let f = s.fiveHour { LimitBar(title: "5h", limit: f, titleSize: 10, showReset: false) }
         }
     }
 }
@@ -92,15 +98,18 @@ private struct SmallWidget: View {
 private struct MediumWidget: View {
     let s: WidgetSnapshot
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        // Reset lines are dropped here (they overflowed) — both limits still show.
+        VStack(alignment: .leading, spacing: 0) {
             Header(working: s.workingCount)
+            Spacer(minLength: 8)
             HStack(spacing: 14) {
                 Metric(title: "Today", value: WFmt.usd(s.todayCost), sub: WFmt.tokens(s.todayTokens))
                 Metric(title: "All-time", value: WFmt.usd(s.totalCost), sub: WFmt.tokens(s.totalTokens))
             }
-            VStack(spacing: 7) {
-                if let f = s.fiveHour { LimitBar(title: "5-hour", limit: f) }
-                if let w = s.sevenDay { LimitBar(title: "Weekly", limit: w) }
+            Spacer(minLength: 10)
+            VStack(spacing: 9) {
+                if let f = s.fiveHour { LimitBar(title: "5-hour", limit: f, showReset: false) }
+                if let w = s.sevenDay { LimitBar(title: "Weekly", limit: w, showReset: false) }
             }
         }
     }
@@ -144,17 +153,36 @@ private struct Metric: View {
     }
 }
 
-private struct LimitBar: View {
-    let title: String; let limit: WidgetLimit; var compact = false
+/// Proportional bar — the stock ProgressView track renders as a bright full
+/// width line on the dark widget, which reads as "100%".
+private struct WBar: View {
+    let pct: Double
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                Text(title).font(.system(size: compact ? 10 : 12)).foregroundStyle(.secondary)
-                Spacer()
-                Text("\(Int(limit.usedPercentage.rounded()))%").font(.system(size: compact ? 10 : 12, weight: .medium))
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.15))
+                Capsule().fill(Color.green)
+                    .frame(width: max(4, geo.size.width * CGFloat(min(max(pct, 0), 100)) / 100))
             }
-            ProgressView(value: min(limit.usedPercentage, 100), total: 100).tint(.green)
-            if !compact {
+        }
+        .frame(height: 5)
+    }
+}
+
+private struct LimitBar: View {
+    let title: String
+    let limit: WidgetLimit
+    var titleSize: CGFloat = 12
+    var showReset = true
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title).font(.system(size: titleSize)).foregroundStyle(.secondary)
+                Spacer()
+                Text("\(Int(limit.usedPercentage.rounded()))%").font(.system(size: titleSize, weight: .medium))
+            }
+            WBar(pct: limit.usedPercentage)
+            if showReset {
                 Text("resets ").font(.system(size: 10)).foregroundStyle(.tertiary)
                     + Text(limit.resetsAt, style: .relative).font(.system(size: 10)).foregroundStyle(.tertiary)
             }
