@@ -6,15 +6,22 @@ build/
 DerivedData/
 *.xcuserstate
 *.moved-aside
-
-# Xcode user data
 xcuserdata/
 *.xcscmblueprint
 *.xccheckout
 
-# Swift Package Manager
-.swiftpm/
-.build/
+# Node / monorepo
+node_modules/
+.turbo/
+dist/
+.output/
+.vite/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.*
+!.env.example
 
 # Distribution artifacts
 *.dmg

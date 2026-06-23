@@ -12,15 +12,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  macos:
     runs-on: macos-26
+    defaults:
+      run:
+        working-directory: apps/macos
     steps:
       - uses: actions/checkout@v4
 
       - name: Toolchain
-        run: |
-          xcodebuild -version
-          swift --version
+        run: xcodebuild -version
 
       - name: Build (Release, ad-hoc signed)
         run: |
@@ -46,5 +47,23 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Anthrocite-app
-          path: Anthrocite.zip
+          path: apps/macos/Anthrocite.zip
           if-no-files-found: error
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist

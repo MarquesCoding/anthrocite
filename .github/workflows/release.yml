@@ -10,6 +10,9 @@ permissions:
 jobs:
   release:
     runs-on: macos-26
+    defaults:
+      run:
+        working-directory: apps/macos
     steps:
       - uses: actions/checkout@v4
 
@@ -68,5 +71,5 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: Anthrocite.dmg
+          files: apps/macos/Anthrocite.dmg
           generate_release_notes: true

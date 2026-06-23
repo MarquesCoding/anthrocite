@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
+    system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #050506;
+  color: #f5f5f7;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle silver text gradient used on headlines */
+.silver {
+  background: linear-gradient(180deg, #ffffff 0%, #b9b9bf 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
