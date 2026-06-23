@@ -13,13 +13,7 @@ struct AnthrociteApp: App {
                 .captureSceneActions()
                 .scenePolicy()
         }
-        .defaultSize(width: 900, height: 620)
-
-        Settings {
-            SettingsView(usage: stores.usage, pricing: stores.pricing)
-                .captureSceneActions()
-                .scenePolicy()
-        }
+        .defaultSize(width: 920, height: 640)
     }
 }
 

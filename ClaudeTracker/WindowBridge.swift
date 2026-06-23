@@ -7,25 +7,21 @@ import SwiftUI
 final class WindowBridge {
     static let shared = WindowBridge()
     var openWindowAction: ((String) -> Void)?
-    var openSettingsAction: (() -> Void)?
 
     func open(_ id: String) { openWindowAction?(id) }
-    func openSettings() { openSettingsAction?() }
 }
 
 extension View {
-    /// Capture the scene's open actions so the AppKit menu can drive them.
+    /// Capture the scene's openWindow action so the AppKit menu can drive it.
     func captureSceneActions() -> some View { modifier(CaptureSceneActions()) }
 }
 
 private struct CaptureSceneActions: ViewModifier {
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
 
     func body(content: Content) -> some View {
         content.onAppear {
             WindowBridge.shared.openWindowAction = { openWindow(id: $0) }
-            WindowBridge.shared.openSettingsAction = { openSettings() }
         }
     }
 }

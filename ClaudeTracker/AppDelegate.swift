@@ -90,8 +90,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: Actions
 
-    @objc private func openDashboard() { WindowBridge.shared.open("dashboard") }
-    @objc private func openSettings() { WindowBridge.shared.openSettings() }
+    @objc private func openDashboard() {
+        Navigation.shared.pane = .overview
+        WindowBridge.shared.open("dashboard")
+    }
+    @objc private func openSettings() {
+        Navigation.shared.pane = .general
+        WindowBridge.shared.open("dashboard")
+    }
     @objc private func toggleStatus() { UserDefaults.standard.set(!showStatus, forKey: Prefs.showStatusKey) }
     @objc private func toggleTimer() { UserDefaults.standard.set(!showTimer, forKey: Prefs.showTimerKey) }
     @objc private func refreshNow() { Task { await stores.usage.refresh() } }
