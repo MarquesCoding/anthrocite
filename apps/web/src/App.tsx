@@ -307,19 +307,10 @@ function Screenshots() {
 
 function Footer() {
   return (
-    <footer className="relative overflow-hidden px-6 pt-12 pb-24 text-center">
-      <img src="/avatar.png" alt="Anthrocite mascot" className="mx-auto mb-2 h-28 w-auto mix-blend-screen" />
-      <div className="relative inline-block">
-        <img
-          src="/arrow.png"
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute -left-32 -top-12 hidden h-24 w-auto opacity-90 mix-blend-screen sm:block"
-        />
-        <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
-          <IconBrandAppleFilled size={19} /> Download for macOS
-        </a>
-      </div>
+    <footer className="relative overflow-hidden px-6 pt-16 pb-24 text-center">
+      <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
+        <IconBrandAppleFilled size={19} /> Download for macOS
+      </a>
       <div className="mt-8 flex items-center justify-center">
         <a href={REPO} aria-label="GitHub" className="rounded-xl bg-white/[0.06] p-3 text-white/70 transition hover:text-white">
           <IconBrandGithubFilled size={22} />
