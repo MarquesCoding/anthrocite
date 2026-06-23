@@ -1,4 +1,5 @@
-import { motion, type Variants } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView, AnimatePresence, type Variants } from "framer-motion";
 import {
   IconBoltFilled,
   IconStack2Filled,
@@ -8,10 +9,10 @@ import {
   IconShieldFilled,
   IconStarFilled,
   IconAppWindowFilled,
-  IconBrandApple,
-  IconBrandGithub,
+  IconBrandAppleFilled,
+  IconBrandGithubFilled,
   IconWifi,
-  IconAdjustmentsHorizontal,
+  IconAdjustmentsFilled,
 } from "@tabler/icons-react";
 
 const REPO = "https://github.com/MarquesCoding/anthrocite";
@@ -27,17 +28,19 @@ const item: Variants = {
 };
 
 export default function App() {
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const ctaInView = useInView(ctaRef, { margin: "-72px 0px 0px 0px" });
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <Nav />
-      <Hero />
+      <Nav showCta={!ctaInView} />
+      <Hero ctaRef={ctaRef} />
       <Features />
       <Footer />
     </div>
   );
 }
 
-function Nav() {
+function Nav({ showCta }: { showCta: boolean }) {
   return (
     <header className="fixed inset-x-0 top-4 z-50 px-4">
       <div className="mx-auto flex h-12 max-w-2xl items-center justify-between rounded-full border border-white/10 bg-white/[0.04] px-4 backdrop-blur-xl">
@@ -46,16 +49,29 @@ function Nav() {
           <span className="text-[15px] font-semibold tracking-tight">Anthrocite</span>
         </a>
         <div className="flex items-center gap-1">
-          <a href="#features" className="hidden rounded-full px-3 py-1.5 text-sm text-white/65 transition hover:text-white sm:block">Features</a>
-          <a href={REPO} aria-label="GitHub" className="rounded-full p-2 text-white/65 transition hover:text-white"><IconBrandGithub size={18} /></a>
-          <a href={RELEASES} className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black transition hover:bg-white/90">Download</a>
+          <a href="#features" className="rounded-full px-3 py-1.5 text-sm text-white/65 transition hover:text-white">Features</a>
+          <AnimatePresence>
+            {showCta && (
+              <motion.div
+                key="navcta"
+                initial={{ opacity: 0, x: 12, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 12, scale: 0.9 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="flex items-center gap-1"
+              >
+                <a href={REPO} aria-label="GitHub" className="rounded-full p-2 text-white/65 transition hover:text-white"><IconBrandGithubFilled size={18} /></a>
+                <a href={RELEASES} className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black transition hover:bg-white/90">Download</a>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>
   );
 }
 
-function Hero() {
+function Hero({ ctaRef }: { ctaRef: React.RefObject<HTMLDivElement | null> }) {
   return (
     <section className="relative px-6 pt-36 text-center">
       <motion.div variants={container} initial="hidden" animate="show">
@@ -72,12 +88,12 @@ function Hero() {
           Live status, usage, cost and your real rate limits for Claude Code —
           right in your menu bar, in real time.
         </motion.p>
-        <motion.div variants={item} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <motion.div ref={ctaRef} variants={item} className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
-            <IconBrandApple size={19} /> Download for macOS
+            <IconBrandAppleFilled size={19} /> Download for macOS
           </a>
           <a href={REPO} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-7 py-3.5 text-[15px] font-medium text-white/80 transition hover:border-white/30">
-            <IconBrandGithub size={19} /> Star on GitHub
+            <IconBrandGithubFilled size={19} /> Star on GitHub
           </a>
         </motion.div>
       </motion.div>
@@ -133,7 +149,7 @@ function DesktopMock() {
           <img src="/logo.svg" alt="" className="h-3 w-auto" /> Editing 12s
         </span>
         <IconWifi size={15} />
-        <IconAdjustmentsHorizontal size={15} />
+        <IconAdjustmentsFilled size={15} />
         <span className="tabular-nums">2:44</span>
       </div>
       {/* dropdown */}
@@ -235,11 +251,11 @@ function Footer() {
   return (
     <footer className="relative overflow-hidden px-6 pt-16 pb-24 text-center">
       <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
-        <IconBrandApple size={19} /> Download for macOS
+        <IconBrandAppleFilled size={19} /> Download for macOS
       </a>
       <div className="mt-8 flex items-center justify-center">
         <a href={REPO} aria-label="GitHub" className="rounded-xl bg-white/[0.06] p-3 text-white/70 transition hover:text-white">
-          <IconBrandGithub size={22} />
+          <IconBrandGithubFilled size={22} />
         </a>
       </div>
       <p className="mt-10 text-sm text-white/35">© 2026 Anthrocite · MIT licensed</p>
