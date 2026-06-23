@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/web/public/og.png" width="640" alt="Anthrocite" />
+  <img src="apps/web/public/icon.png" width="64" alt="Anthrocite" />
 </p>
 
 <h1 align="center">Anthrocite</h1>

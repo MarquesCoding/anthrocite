@@ -44,7 +44,7 @@ export default function App() {
 }
 
 /* The single CTA pair that morphs between the hero and the nav via layoutId. */
-const swing = { type: "spring" as const, stiffness: 320, damping: 18, mass: 0.9 };
+const swing = { duration: 0.62, ease: "anticipate" as const };
 
 function Cta({ compact = false }: { compact?: boolean }) {
   const pad = compact ? "py-1.5 text-sm" : "py-3.5 text-[15px]";
