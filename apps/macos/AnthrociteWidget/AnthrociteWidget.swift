@@ -34,7 +34,7 @@ struct AnthrociteWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "app.anthrocite.widget", provider: Provider()) { entry in
             WidgetView(snapshot: entry.snapshot)
-                .containerBackground(.background, for: .widget)
+                .containerBackground(.regularMaterial, for: .widget)  // translucent/glossy like system widgets
         }
         .configurationDisplayName("Anthrocite")
         .description("Live status, usage, cost and limits for your AI coding agents.")
