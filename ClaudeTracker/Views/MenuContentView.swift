@@ -1,48 +1,20 @@
 import SwiftUI
-import AppKit
 
-/// An AppKit segmented control wrapped for SwiftUI. AppKit controls (unlike
-/// SwiftUI ones) receive clicks inside an NSMenu's tracking run loop.
-struct ScopeSelector: NSViewRepresentable {
-    @Binding var scope: Scope
-
-    func makeNSView(context: Context) -> NSSegmentedControl {
-        let control = NSSegmentedControl(
-            labels: Scope.allCases.map(\.rawValue),
-            trackingMode: .selectOne,
-            target: context.coordinator,
-            action: #selector(Coordinator.changed(_:)))
-        control.segmentDistribution = .fillEqually
-        control.selectedSegment = Scope.allCases.firstIndex(of: scope) ?? 0
-        return control
-    }
-
-    func updateNSView(_ control: NSSegmentedControl, context: Context) {
-        context.coordinator.parent = self
-        control.selectedSegment = Scope.allCases.firstIndex(of: scope) ?? 0
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    final class Coordinator: NSObject {
-        var parent: ScopeSelector
-        init(_ parent: ScopeSelector) { self.parent = parent }
-        @objc func changed(_ sender: NSSegmentedControl) {
-            let i = sender.selectedSegment
-            if i >= 0, i < Scope.allCases.count { parent.scope = Scope.allCases[i] }
-        }
-    }
+enum Scope: String, CaseIterable, Identifiable {
+    case today = "Today", session = "Session", total = "Total"
+    var id: String { rawValue }
 }
 
-/// Display-only content embedded as a custom view inside the native NSMenu.
-/// It draws NO background — the system menu provides the material/blur/corners.
-/// Toggles, version and quit live in real NSMenuItems; the scope tab bar is an
-/// AppKit segmented control (works inside the menu).
+/// The MenuBarExtra (.window) dropdown — all native SwiftUI controls.
 struct MenuContentView: View {
     @ObservedObject var usage: UsageStore
     @ObservedObject var status: StatusStore
     @ObservedObject var pricing: PricingStore
+
+    @Environment(\.openWindow) private var openWindow
     @AppStorage(Prefs.scopeKey) private var scopeRaw = Scope.today.rawValue
+    @AppStorage(Prefs.showTimerKey) private var showTimer = true
+    @AppStorage(Prefs.showStatusKey) private var showStatus = true
 
     private var scope: Scope { Scope(rawValue: scopeRaw) ?? .today }
 
@@ -55,41 +27,37 @@ struct MenuContentView: View {
     }
 
     private var costString: String {
-        // The current session shows Claude Code's own exact cost; otherwise we
-        // price each model with the fetched pricing table.
         if scope == .session, let real = status.primary?.costUSD { return Fmt.usd(real) }
         return Fmt.usd(breakdown.totalCost(pricing.table))
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 12) {
             if !status.sessions.isEmpty {
                 sessionsSection
-                rule
+                Divider()
             }
             usageSection
-            rule
+            Divider()
             limitsSection
+            Divider()
+            footer
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 1)
-        .padding(.bottom, 5)
-        .frame(width: 290, alignment: .leading)
-    }
-
-    private var rule: some View {
-        Divider().padding(.vertical, 9)
+        .padding(14)
+        .frame(width: 300)
     }
 
     // MARK: Sessions
 
     private var sessionsSection: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                SectionHeader(text: status.sessions.count == 1 ? "Session" : "Sessions")
+                Text(status.sessions.count == 1 ? "Session" : "Sessions")
+                    .font(.headline)
+                Spacer()
                 if status.workingCount > 0 {
                     Text("\(status.workingCount) working")
-                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
             ForEach(status.sessions) { sessionRow($0) }
@@ -97,19 +65,18 @@ struct MenuContentView: View {
     }
 
     private func sessionRow(_ s: LiveSession) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(s.isWorking ? Color.green : Color.secondary.opacity(0.4))
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 7) {
+                Circle().fill(s.isWorking ? Color.green : Color.secondary.opacity(0.4))
                     .frame(width: 6, height: 6)
-                Text(s.project).font(.system(size: 13, weight: .medium)).lineLimit(1)
+                Text(s.project).fontWeight(.medium).lineLimit(1)
                 Spacer(minLength: 8)
                 sessionStatus(s)
             }
             if let ctx = s.context {
-                ProgressBar(fraction: ctx.usedPercentage / 100)
+                ProgressView(value: min(ctx.usedPercentage, 100), total: 100)
                 Text("\(Fmt.tokens(ctx.usedTokens)) of \(Fmt.tokens(ctx.windowSize)) · \(Int(ctx.usedPercentage.rounded()))% context")
-                    .font(.system(size: 11)).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(.secondary)
             }
         }
     }
@@ -118,11 +85,11 @@ struct MenuContentView: View {
     private func sessionStatus(_ s: LiveSession) -> some View {
         if s.isWorking, let since = s.activeSince {
             TimelineView(.periodic(from: .now, by: 1)) { tl in
-                Text("\(s.statusText) \(max(0, Int(tl.date.timeIntervalSince(since))))s")
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                Text(showTimer ? "\(s.statusText) \(max(0, Int(tl.date.timeIntervalSince(since))))s" : s.statusText)
+                    .font(.caption).foregroundStyle(.secondary)
             }
         } else {
-            Text("idle").font(.system(size: 11)).foregroundStyle(.tertiary)
+            Text("idle").font(.caption).foregroundStyle(.tertiary)
         }
     }
 
@@ -130,48 +97,90 @@ struct MenuContentView: View {
 
     private var usageSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader(text: "Usage")
-            ScopeSelector(scope: Binding(get: { scope }, set: { scopeRaw = $0.rawValue }))
-                .frame(height: 22)
-            StatRow(label: "Tokens", value: Fmt.tokens(breakdown.totalTokens), emphasized: true)
-            StatRow(label: "Cost", value: costString, emphasized: true)
+            Picker("Scope", selection: Binding(get: { scope }, set: { scopeRaw = $0.rawValue })) {
+                ForEach(Scope.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
 
-            let combined = breakdown.combined
-            if combined.total > 0 {
-                VStack(spacing: 4) {
-                    subRow("Input", combined.input)
-                    subRow("Output", combined.output)
-                    subRow("Cache write", combined.cacheWrite)
-                    subRow("Cache read", combined.cacheRead)
+            LabeledContent("Tokens") { Text(Fmt.tokens(breakdown.totalTokens)).fontWeight(.semibold) }
+            LabeledContent("Cost") { Text(costString).fontWeight(.semibold) }
+
+            let c = breakdown.combined
+            if c.total > 0 {
+                Group {
+                    LabeledContent("Input") { Text(Fmt.tokens(c.input)) }
+                    LabeledContent("Output") { Text(Fmt.tokens(c.output)) }
+                    LabeledContent("Cache write") { Text(Fmt.tokens(c.cacheWrite)) }
+                    LabeledContent("Cache read") { Text(Fmt.tokens(c.cacheRead)) }
                 }
-                let cachePct = Int((Double(combined.cacheRead) / Double(combined.total) * 100).rounded())
-                Text("\(cachePct)% are cached context re-reads")
-                    .font(.system(size: 11)).foregroundStyle(.tertiary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
         }
-    }
-
-    private func subRow(_ label: String, _ n: Int) -> some View {
-        HStack {
-            Text(label).foregroundStyle(.tertiary)
-            Spacer()
-            Text(Fmt.tokens(n)).monospacedDigit().foregroundStyle(.secondary)
-        }
-        .font(.system(size: 12))
     }
 
     // MARK: Limits
 
     private var limitsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(text: "Limits")
-            LimitRow(title: "5-Hour Session", window: status.fiveHour)
-            LimitRow(title: "Weekly", window: status.sevenDay)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Limits").font(.headline)
+            limitRow("5-Hour Session", status.fiveHour)
+            limitRow("Weekly", status.sevenDay)
         }
     }
-}
 
-enum Scope: String, CaseIterable, Identifiable {
-    case today = "Today", session = "Session", total = "Total"
-    var id: String { rawValue }
+    private func limitRow(_ title: String, _ window: LimitWindow?) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(window.map { "\(Int($0.usedPercentage.rounded()))%" } ?? "—")
+            }
+            .font(.subheadline)
+            ProgressView(value: min(window?.usedPercentage ?? 0, 100), total: 100)
+            if let window {
+                TimelineView(.periodic(from: .now, by: 1)) { tl in
+                    Text("resets in \(Fmt.countdown(to: window.resetsAt, now: tl.date)) · \(Fmt.resetClock(window.resetsAt))")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+            } else {
+                Text("waiting for an active session")
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    // MARK: Footer
+
+    private var footer: some View {
+        VStack(spacing: 8) {
+            Toggle("Show status text", isOn: $showStatus)
+            Toggle("Show timer", isOn: $showTimer).disabled(!showStatus)
+
+            Divider()
+
+            Button {
+                openWindow(id: "dashboard")
+            } label: {
+                Label("Open Dashboard", systemImage: "chart.xyaxis.line")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            SettingsLink {
+                Label("Settings…", systemImage: "gearshape")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Button(role: .destructive) {
+                NSApp.terminate(nil)
+            } label: {
+                Label("Quit \(AppInfo.name)", systemImage: "power")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .toggleStyle(.switch)
+        .buttonStyle(.plain)
+        .controlSize(.small)
+    }
 }
