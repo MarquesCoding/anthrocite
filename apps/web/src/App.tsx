@@ -1,55 +1,37 @@
+import { motion, type Variants } from "framer-motion";
 import {
-  Activity,
-  Layers,
-  Gauge,
-  DollarSign,
-  BarChart3,
-  Lock,
-  Apple,
-  Github,
-} from "lucide-react";
+  IconBoltFilled,
+  IconStack2Filled,
+  IconGaugeFilled,
+  IconCoinFilled,
+  IconChartAreaLineFilled,
+  IconShieldFilled,
+  IconStarFilled,
+  IconAppWindowFilled,
+  IconBrandApple,
+  IconBrandGithub,
+  IconWifi,
+  IconAdjustmentsHorizontal,
+} from "@tabler/icons-react";
 
-const features = [
-  {
-    icon: Activity,
-    title: "Live status",
-    desc: "See exactly what Claude is doing right now — Reading, Running, Editing, Thinking — with a ticking timer in your menu bar.",
-  },
-  {
-    icon: Layers,
-    title: "Every session",
-    desc: "Track all your concurrent agents at once, each with its own project, status and context window. CLI, VS Code or JetBrains.",
-  },
-  {
-    icon: Gauge,
-    title: "Real limits",
-    desc: "Your actual 5-hour and weekly rate-limit usage with exact reset times — straight from Claude Code, not a guess.",
-  },
-  {
-    icon: DollarSign,
-    title: "Exact cost",
-    desc: "Per-model pricing from the live LiteLLM dataset, split into input, output and cache. Know what every session really costs.",
-  },
-  {
-    icon: BarChart3,
-    title: "Dashboard",
-    desc: "A native macOS dashboard with trends over time, top projects and models — built entirely from Apple's own components.",
-  },
-  {
-    icon: Lock,
-    title: "Totally private",
-    desc: "Everything is read locally from your machine. Nothing about your code or usage is ever sent anywhere.",
-  },
-];
+const REPO = "https://github.com/MarquesCoding/anthrocite";
+const RELEASES = `${REPO}/releases`;
+
+const container: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+const item: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+};
 
 export default function App() {
   return (
     <div className="min-h-screen overflow-x-hidden">
       <Nav />
       <Hero />
-      <Screenshots />
       <Features />
-      <Pricing />
       <Footer />
     </div>
   );
@@ -57,12 +39,17 @@ export default function App() {
 
 function Nav() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
-      <div className="mx-auto flex h-16 max-w-6xl items-center px-6">
-        <a href="#" className="flex items-center gap-2.5">
-          <img src="/logo-light.svg" alt="Anthrocite" className="h-5 w-auto" />
+    <header className="fixed inset-x-0 top-4 z-50 px-4">
+      <div className="mx-auto flex h-12 max-w-2xl items-center justify-between rounded-full border border-white/10 bg-white/[0.04] px-4 backdrop-blur-xl">
+        <a href="#" className="flex items-center gap-2">
+          <img src="/icon.svg" alt="" className="h-6 w-6 rounded-md" />
           <span className="text-[15px] font-semibold tracking-tight">Anthrocite</span>
         </a>
+        <div className="flex items-center gap-1">
+          <a href="#features" className="hidden rounded-full px-3 py-1.5 text-sm text-white/65 transition hover:text-white sm:block">Features</a>
+          <a href={REPO} aria-label="GitHub" className="rounded-full p-2 text-white/65 transition hover:text-white"><IconBrandGithub size={18} /></a>
+          <a href={RELEASES} className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black transition hover:bg-white/90">Download</a>
+        </div>
       </div>
     </header>
   );
@@ -70,66 +57,83 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="relative px-6 pt-40 pb-24 text-center">
-      {/* soft radial glow */}
-      <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.08),transparent_60%)]" />
-      <p className="mb-5 text-sm font-medium text-white/40">For Claude Code · macOS 15+</p>
-      <h1 className="mx-auto max-w-4xl text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
-        <span className="silver">Your AI coding agents,</span>
-        <br />
-        <span className="silver">at a glance.</span>
-      </h1>
-      <p className="mx-auto mt-6 max-w-xl text-lg text-white/55">
-        Anthrocite lives in your menu bar and shows live status, usage, cost and your
-        real rate limits — across every session, in real time.
-      </p>
-      <div className="mt-9 flex items-center justify-center">
-        <a
-          href="#download"
-          className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90"
-        >
-          <Apple className="h-4.5 w-4.5" /> Download for macOS
-        </a>
-      </div>
-      <p className="mt-4 text-sm">
-        <span className="font-medium text-white">Free for a limited time</span>
-        <span className="text-white/35"> — normally $1.99, one-time.</span>
-      </p>
+    <section className="px-6 pt-36 pb-10 text-center">
+      <motion.div variants={container} initial="hidden" animate="show">
+        <motion.p variants={item} className="mb-5 text-sm font-medium text-white/45">
+          Free &amp; open source · macOS 15+
+        </motion.p>
+        <motion.h1 variants={item} className="mx-auto max-w-4xl text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
+          Your AI coding agents,
+          <br />
+          at a glance.
+        </motion.h1>
+        <motion.p variants={item} className="mx-auto mt-6 max-w-xl text-lg text-white/55">
+          Anthrocite lives in your menu bar — live status, usage, cost and your real
+          rate limits, across every session, in real time.
+        </motion.p>
+        <motion.div variants={item} className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
+            <IconBrandApple size={19} /> Download for macOS
+          </a>
+          <a href={REPO} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-7 py-3.5 text-[15px] font-medium text-white/80 transition hover:border-white/30">
+            <IconBrandGithub size={19} /> Star on GitHub
+          </a>
+        </motion.div>
+      </motion.div>
 
-      <div className="mx-auto mt-20 max-w-md">
-        <MenuMock />
-      </div>
+      <motion.div
+        variants={item}
+        initial="hidden"
+        animate="show"
+        transition={{ delay: 0.35, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto mt-16 max-w-5xl"
+      >
+        <DesktopMock />
+      </motion.div>
     </section>
   );
 }
 
-/* A faithful mock of the menu-bar dropdown, built in HTML/CSS. */
-function MenuMock() {
+/* A framed macOS desktop showing the menu bar + Anthrocite dropdown over a
+   wallpaper. Drop /hero-bg.jpg into public to use a real wallpaper. */
+function DesktopMock() {
   return (
-    <div className="relative">
-      <div className="pointer-events-none absolute -inset-10 -z-10 rounded-[40px] bg-white/[0.03] blur-2xl" />
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#161618]/90 p-4 text-left shadow-2xl backdrop-blur-xl">
-        {/* Sessions */}
-        <p className="px-1 text-xs font-semibold uppercase tracking-wide text-white/40">Sessions · 2 working</p>
-        <Session name="anthrocite" status="Editing 12s" pct={31} working />
-        <Session name="ChatPod" status="Running 4s" pct={71} working />
-
-        <div className="my-3 h-px bg-white/10" />
-
-        {/* Usage */}
-        <div className="mb-2 flex gap-1 rounded-lg bg-white/5 p-0.5 text-xs">
+    <div className="relative overflow-hidden rounded-[20px] border border-white/10 shadow-[0_50px_120px_-30px_rgba(0,0,0,0.7)]">
+      {/* wallpaper */}
+      <div
+        className="aspect-[16/10] w-full"
+        style={{
+          backgroundColor: "#1a1030",
+          backgroundImage:
+            "url('/hero-bg.jpg'), radial-gradient(60% 80% at 20% 20%, #5b3aa6 0%, transparent 60%), radial-gradient(60% 80% at 80% 70%, #2a6cf4 0%, transparent 55%), radial-gradient(50% 60% at 60% 30%, #d36ad8 0%, transparent 55%)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+      {/* menu bar */}
+      <div className="absolute inset-x-0 top-0 flex h-8 items-center justify-end gap-4 bg-black/20 px-4 text-[13px] text-white backdrop-blur-sm">
+        <span className="flex items-center gap-1.5 font-medium">
+          <img src="/icon.svg" className="h-3.5 w-3.5 rounded-[3px]" /> Editing 12s
+        </span>
+        <IconWifi size={15} />
+        <IconAdjustmentsHorizontal size={15} />
+        <span className="tabular-nums">2:44</span>
+      </div>
+      {/* dropdown */}
+      <div className="absolute right-3 top-10 w-[270px] overflow-hidden rounded-xl border border-white/10 bg-[#161618]/85 p-3.5 text-left shadow-2xl backdrop-blur-2xl sm:right-6 sm:top-11 sm:w-[300px]">
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-white/40">Sessions · 2 working</p>
+        <Session name="anthrocite" status="Editing 12s" pct={31} />
+        <Session name="ChatPod" status="Running 4s" pct={71} />
+        <div className="my-2.5 h-px bg-white/10" />
+        <div className="mb-2 flex gap-1 rounded-lg bg-white/5 p-0.5 text-[11px]">
           <span className="flex-1 rounded-md bg-white/15 py-1 text-center font-medium text-white">Today</span>
           <span className="flex-1 py-1 text-center text-white/40">Session</span>
           <span className="flex-1 py-1 text-center text-white/40">Total</span>
         </div>
         <Row label="Tokens" value="89.4M" bold />
         <Row label="Cost" value="$75.10" bold />
-        <Row label="Cache read" value="86.2M" muted />
-
-        <div className="my-3 h-px bg-white/10" />
-
-        {/* Limits */}
-        <p className="px-1 text-xs font-semibold uppercase tracking-wide text-white/40">Limits</p>
+        <div className="my-2.5 h-px bg-white/10" />
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-white/40">Limits</p>
         <Limit label="5-Hour Session" pct={13} sub="resets in 2h 4m" />
         <Limit label="Weekly" pct={2} sub="resets in 6d 1h" />
       </div>
@@ -137,32 +141,29 @@ function MenuMock() {
   );
 }
 
-function Session({ name, status, pct, working }: { name: string; status: string; pct: number; working?: boolean }) {
+function Session({ name, status, pct }: { name: string; status: string; pct: number }) {
   return (
-    <div className="px-1 py-2">
+    <div className="px-1 py-1.5 text-white">
       <div className="flex items-center gap-2">
-        <span className={`h-1.5 w-1.5 rounded-full ${working ? "bg-emerald-400" : "bg-white/30"}`} />
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
         <span className="text-[13px] font-medium">{name}</span>
-        <span className="ml-auto text-xs text-white/50">{status}</span>
+        <span className="ml-auto text-[11px] text-white/50">{status}</span>
       </div>
       <Bar pct={pct} className="mt-1.5" />
-      <p className="mt-1 text-[11px] text-white/35">{pct}% context</p>
     </div>
   );
 }
-
-function Row({ label, value, bold, muted }: { label: string; value: string; bold?: boolean; muted?: boolean }) {
+function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex justify-between px-1 py-0.5 text-[13px] ${muted ? "text-white/40" : ""}`}>
+    <div className="flex justify-between px-1 py-0.5 text-[13px] text-white">
       <span className={bold ? "font-medium" : "text-white/55"}>{label}</span>
       <span className={`tabular-nums ${bold ? "font-semibold" : ""}`}>{value}</span>
     </div>
   );
 }
-
 function Limit({ label, pct, sub }: { label: string; pct: number; sub: string }) {
   return (
-    <div className="px-1 py-1.5">
+    <div className="px-1 py-1 text-white">
       <div className="flex justify-between text-[13px]">
         <span className="text-white/70">{label}</span>
         <span className="tabular-nums">{pct}%</span>
@@ -172,7 +173,6 @@ function Limit({ label, pct, sub }: { label: string; pct: number; sub: string })
     </div>
   );
 }
-
 function Bar({ pct, className = "" }: { pct: number; className?: string }) {
   return (
     <div className={`h-1 overflow-hidden rounded-full bg-white/10 ${className}`}>
@@ -181,108 +181,53 @@ function Bar({ pct, className = "" }: { pct: number; className?: string }) {
   );
 }
 
-/* Drop PNG/JPG files into apps/web/public/screenshots/ matching these names.
-   Missing images hide themselves, so add as many as you have. */
-const screenshots = [
-  { src: "/screenshots/dashboard.png", caption: "The dashboard — trends, projects & models" },
-  { src: "/screenshots/menu.png", caption: "Live status in the menu bar" },
-  { src: "/screenshots/sessions.png", caption: "Every concurrent session at a glance" },
+const features = [
+  { icon: IconBoltFilled, title: "Live status" },
+  { icon: IconStack2Filled, title: "Every session" },
+  { icon: IconGaugeFilled, title: "Real limits" },
+  { icon: IconCoinFilled, title: "Exact cost" },
+  { icon: IconChartAreaLineFilled, title: "Usage trends" },
+  { icon: IconShieldFilled, title: "Totally private" },
+  { icon: IconAppWindowFilled, title: "Menu-bar native" },
+  { icon: IconStarFilled, title: "Free & open source" },
 ];
-
-function Screenshots() {
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
-      <div className="grid gap-6 md:grid-cols-2">
-        {screenshots.map((s, i) => (
-          <figure
-            key={s.src}
-            className={`overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] ${i === 0 ? "md:col-span-2" : ""}`}
-          >
-            <img
-              src={s.src}
-              alt={s.caption}
-              loading="lazy"
-              className="w-full"
-              onError={(e) => {
-                const fig = e.currentTarget.closest("figure");
-                if (fig) (fig as HTMLElement).style.display = "none";
-              }}
-            />
-            <figcaption className="px-5 py-3 text-sm text-white/45">{s.caption}</figcaption>
-          </figure>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function Features() {
   return (
-    <section id="features" className="mx-auto max-w-6xl px-6 py-28">
-      <div className="mx-auto mb-16 max-w-2xl text-center">
-        <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">Everything, where you can see it.</h2>
-        <p className="mt-4 text-lg text-white/50">No dashboards to open, no terminals to check. Just glance up.</p>
-      </div>
-      <div className="grid gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+    <motion.section
+      id="features"
+      variants={container}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-80px" }}
+      className="mx-auto max-w-5xl px-6 py-28"
+    >
+      <div className="grid grid-cols-2 gap-x-8 gap-y-14 sm:grid-cols-4">
         {features.map((f) => (
-          <div key={f.title} className="bg-[#050506] p-8">
-            <f.icon className="h-6 w-6 text-white/80" strokeWidth={1.5} />
-            <h3 className="mt-5 text-lg font-medium">{f.title}</h3>
-            <p className="mt-2 text-[15px] leading-relaxed text-white/50">{f.desc}</p>
-          </div>
+          <motion.div variants={item} key={f.title} className="flex flex-col items-center text-center">
+            <f.icon size={34} className="text-white/85" />
+            <h3 className="mt-4 text-[17px] font-semibold leading-tight">{f.title}</h3>
+          </motion.div>
         ))}
       </div>
-    </section>
-  );
-}
-
-function Pricing() {
-  return (
-    <section id="download" className="mx-auto max-w-6xl px-6 py-28">
-      <div className="mx-auto max-w-md">
-        <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-10 text-center">
-          <span className="inline-block rounded-full border border-white/15 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/70">
-            Limited-time offer
-          </span>
-          <div className="mt-6 flex items-baseline justify-center gap-3">
-            <span className="text-6xl font-semibold tracking-tight">$0</span>
-            <span className="text-2xl font-medium text-white/30 line-through">$1.99</span>
-          </div>
-          <p className="mt-2 text-white/45">Free while we launch. One-time, yours forever.</p>
-          <a
-            href="#"
-            className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 font-medium text-black transition hover:bg-white/90"
-          >
-            <Apple className="h-4.5 w-4.5" /> Download for macOS — Free
-          </a>
-          <div className="mt-6 border-t border-white/10 pt-6 text-sm text-white/50">
-            <span className="font-medium text-white/80">Students</span> always get it free —{" "}
-            <a className="underline decoration-white/30 underline-offset-4 hover:text-white" href="mailto:students@anthrocite.app">
-              email us
-            </a>{" "}
-            from your university address.
-          </div>
-        </div>
-      </div>
-    </section>
+    </motion.section>
   );
 }
 
 function Footer() {
   return (
-    <footer className="border-t border-white/5 px-6 py-12">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo-light.svg" alt="" className="h-4 w-auto opacity-70" />
-          <span className="text-sm text-white/40">© 2026 Anthrocite</span>
-        </div>
-        <div className="flex items-center gap-6 text-sm text-white/40">
-          <a href="#features" className="hover:text-white">Features</a>
-          <a href="#pricing" className="hover:text-white">Pricing</a>
-          <a href="https://github.com/MarquesCoding" className="flex items-center gap-1.5 hover:text-white">
-            <Github className="h-4 w-4" /> GitHub
-          </a>
-        </div>
+    <footer className="relative overflow-hidden px-6 pt-16 pb-24 text-center">
+      <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
+        <IconBrandApple size={19} /> Download for macOS
+      </a>
+      <div className="mt-8 flex items-center justify-center">
+        <a href={REPO} aria-label="GitHub" className="rounded-xl bg-white/[0.06] p-3 text-white/70 transition hover:text-white">
+          <IconBrandGithub size={22} />
+        </a>
+      </div>
+      <p className="mt-10 text-sm text-white/35">© 2026 Anthrocite · MIT licensed</p>
+      <div aria-hidden className="pointer-events-none absolute -bottom-6 left-1/2 -z-0 -translate-x-1/2 select-none text-[20vw] font-bold leading-none tracking-tighter text-white/[0.025]">
+        Anthrocite
       </div>
     </footer>
   );

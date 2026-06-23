@@ -13,7 +13,6 @@ site, and the licensing API.
 apps/
   macos/   Native macOS menu-bar app + dashboard (SwiftUI + AppKit, Xcode)
   web/     Marketing site / landing page (Vite + React + Tailwind)
-  api/     Licensing API (Hono) — Polar webhooks + license validation
 packages/  Shared code (TBD)
 ```
 
