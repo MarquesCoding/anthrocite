@@ -6,8 +6,40 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1B000000000000000000000D /* AnthrociteWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000002 /* AnthrociteWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		1B000000000000000000000F /* WidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000E /* WidgetShared.swift */; };
+		1B0000000000000000000010 /* WidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000E /* WidgetShared.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1B000000000000000000000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1A0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1B0000000000000000000001;
+			remoteInfo = AnthrociteWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1B000000000000000000000C /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				1B000000000000000000000D /* AnthrociteWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		1A0000000000000000000006 /* Anthrocite.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Anthrocite.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1B0000000000000000000002 /* AnthrociteWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AnthrociteWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1B000000000000000000000E /* WidgetShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetShared.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +48,22 @@
 			path = Anthrocite;
 			sourceTree = "<group>";
 		};
+		1B0000000000000000000006 /* AnthrociteWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AnthrociteWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		1A0000000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1B0000000000000000000004 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +77,8 @@
 			isa = PBXGroup;
 			children = (
 				1A0000000000000000000004 /* Anthrocite */,
+				1B0000000000000000000006 /* AnthrociteWidget */,
+				1B0000000000000000000011 /* Shared */,
 				1A0000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +87,17 @@
 			isa = PBXGroup;
 			children = (
 				1A0000000000000000000006 /* Anthrocite.app */,
+				1B0000000000000000000002 /* AnthrociteWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		1B0000000000000000000011 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				1B000000000000000000000E /* WidgetShared.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +110,12 @@
 				1A0000000000000000000007 /* Sources */,
 				1A0000000000000000000008 /* Frameworks */,
 				1A0000000000000000000009 /* Resources */,
+				1B000000000000000000000C /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				1B000000000000000000000B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				1A0000000000000000000004 /* Anthrocite */,
@@ -67,6 +124,26 @@
 			productName = Anthrocite;
 			productReference = 1A0000000000000000000006 /* Anthrocite.app */;
 			productType = "com.apple.product-type.application";
+		};
+		1B0000000000000000000001 /* AnthrociteWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1B0000000000000000000007 /* Build configuration list for PBXNativeTarget "AnthrociteWidget" */;
+			buildPhases = (
+				1B0000000000000000000003 /* Sources */,
+				1B0000000000000000000004 /* Frameworks */,
+				1B0000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				1B0000000000000000000006 /* AnthrociteWidget */,
+			);
+			name = AnthrociteWidget;
+			productName = AnthrociteWidget;
+			productReference = 1B0000000000000000000002 /* AnthrociteWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -79,6 +156,9 @@
 				LastUpgradeCheck = 1700;
 				TargetAttributes = {
 					1A0000000000000000000005 = {
+						CreatedOnToolsVersion = 17.0;
+					};
+					1B0000000000000000000001 = {
 						CreatedOnToolsVersion = 17.0;
 					};
 				};
@@ -99,12 +179,20 @@
 			projectRoot = "";
 			targets = (
 				1A0000000000000000000005 /* Anthrocite */,
+				1B0000000000000000000001 /* AnthrociteWidget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1A0000000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1B0000000000000000000005 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -118,10 +206,27 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1B000000000000000000000F /* WidgetShared.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1B0000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1B0000000000000000000010 /* WidgetShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1B000000000000000000000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1B0000000000000000000001 /* AnthrociteWidget */;
+			targetProxy = 1B000000000000000000000A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1A000000000000000000000C /* Debug */ = {
@@ -167,7 +272,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Anthrocite;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = app.anthrocite.Anthrocite;
 				PRODUCT_NAME = Anthrocite;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -190,9 +295,58 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Anthrocite;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = app.anthrocite.Anthrocite;
 				PRODUCT_NAME = Anthrocite;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		1B0000000000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/AnthrociteWidget-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.anthrocite.Anthrocite.Widget";
+				PRODUCT_NAME = AnthrociteWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1B0000000000000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/AnthrociteWidget-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.1.4;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.anthrocite.Anthrocite.Widget";
+				PRODUCT_NAME = AnthrociteWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -215,6 +369,15 @@
 			buildConfigurations = (
 				1A000000000000000000000E /* Debug */,
 				1A000000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1B0000000000000000000007 /* Build configuration list for PBXNativeTarget "AnthrociteWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1B0000000000000000000008 /* Debug */,
+				1B0000000000000000000009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

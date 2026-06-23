@@ -30,6 +30,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
+            ENABLE_DEBUG_DYLIB=NO \
             build
 
       # ---- Developer ID signing + notarization (only when secrets are configured) ----
@@ -56,8 +57,16 @@ jobs:
           security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions "$KEYCHAIN"
+          # Sign inside-out with per-component entitlements (NOT --deep, which would
+          # strip the widget's sandbox/App-Group entitlements it needs to appear in
+          # the widget gallery).
+          APPEX="$APP/Contents/PlugIns/AnthrociteWidget.appex"
           codesign --force --options runtime --timestamp \
-            --sign "$MACOS_SIGN_IDENTITY" --deep "$APP"
+            --entitlements Config/AnthrociteWidget.entitlements \
+            --sign "$MACOS_SIGN_IDENTITY" "$APPEX"
+          codesign --force --options runtime --timestamp \
+            --entitlements Config/Anthrocite.entitlements \
+            --sign "$MACOS_SIGN_IDENTITY" "$APP"
           ditto -c -k --keepParent "$APP" "Anthrocite-notarize.zip"
           xcrun notarytool submit "Anthrocite-notarize.zip" \
             --apple-id "$AC_APPLE_ID" --team-id "$AC_TEAM_ID" --password "$AC_PASSWORD" --wait
