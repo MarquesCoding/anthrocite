@@ -47,14 +47,16 @@ export default function App() {
 const swing = { type: "spring" as const, stiffness: 320, damping: 18, mass: 0.9 };
 
 function Cta({ compact = false }: { compact?: boolean }) {
-  const pad = compact ? "px-3.5 py-1.5 text-sm" : "px-7 py-3.5 text-[15px]";
+  const pad = compact ? "py-1.5 text-sm" : "py-3.5 text-[15px]";
+  const minw = compact ? "min-w-[116px]" : "min-w-[164px]";
   const sz = compact ? 16 : 19;
+  const base = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 font-medium transition-colors ${pad} ${minw}`;
   return (
     <motion.div layoutId="cta" transition={swing} className="flex items-center gap-2.5">
-      <motion.a layout transition={swing} href={REPO} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-white/15 font-medium text-white/80 transition-colors hover:border-white/30 ${pad}`}>
+      <motion.a layout transition={swing} href={REPO} className={`${base} border border-white/15 text-white/80 hover:border-white/30`}>
         <IconBrandGithubFilled size={sz} /> GitHub
       </motion.a>
-      <motion.a layout transition={swing} href={RELEASES} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white font-medium text-black transition-colors hover:bg-white/90 ${pad}`}>
+      <motion.a layout transition={swing} href={RELEASES} className={`${base} bg-white text-black hover:bg-white/90`}>
         <IconBrandAppleFilled size={sz} /> Download
       </motion.a>
     </motion.div>
@@ -178,7 +180,7 @@ function DesktopMock() {
 
       {/* dock */}
       <div className="absolute inset-x-0 bottom-3 flex justify-center">
-        <div className="flex items-center gap-2 rounded-[20px] border border-white/15 bg-zinc-800/55 px-2.5 py-2 shadow-2xl backdrop-blur-2xl">
+        <div className="flex items-center gap-2 rounded-[20px] border border-white/15 bg-zinc-800/85 px-2.5 py-2 shadow-2xl backdrop-blur-xl">
           <div className="flex flex-col items-center">
             <img src="/icon.png" alt="Anthrocite" className="h-12 w-12 rounded-[12px] shadow-md" />
             <span className="mt-1 h-1 w-1 rounded-full bg-white/70" />
