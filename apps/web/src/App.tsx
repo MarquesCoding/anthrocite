@@ -47,6 +47,7 @@ export default function App() {
     <div className="min-h-screen overflow-x-hidden">
       <Nav />
       <Hero />
+      <Screenshots />
       <Features />
       <Pricing />
       <Footer />
@@ -56,22 +57,11 @@ export default function App() {
 
 function Nav() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-[#050506]/70 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+    <header className="fixed inset-x-0 top-0 z-50">
+      <div className="mx-auto flex h-16 max-w-6xl items-center px-6">
         <a href="#" className="flex items-center gap-2.5">
-          <img src="/logo-light.svg" alt="" className="h-5 w-auto" />
+          <img src="/logo-light.svg" alt="Anthrocite" className="h-5 w-auto" />
           <span className="text-[15px] font-semibold tracking-tight">Anthrocite</span>
-        </a>
-        <nav className="hidden items-center gap-8 text-sm text-white/60 md:flex">
-          <a href="#features" className="transition hover:text-white">Features</a>
-          <a href="#pricing" className="transition hover:text-white">Pricing</a>
-          <a href="https://github.com/MarquesCoding" className="transition hover:text-white">GitHub</a>
-        </nav>
-        <a
-          href="#pricing"
-          className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black transition hover:bg-white/90"
-        >
-          Download
         </a>
       </div>
     </header>
@@ -93,21 +83,18 @@ function Hero() {
         Anthrocite lives in your menu bar and shows live status, usage, cost and your
         real rate limits — across every session, in real time.
       </p>
-      <div className="mt-9 flex items-center justify-center gap-3">
+      <div className="mt-9 flex items-center justify-center">
         <a
-          href="#pricing"
-          className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-[15px] font-medium text-black transition hover:bg-white/90"
+          href="#download"
+          className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90"
         >
           <Apple className="h-4.5 w-4.5" /> Download for macOS
         </a>
-        <a
-          href="#pricing"
-          className="rounded-full border border-white/15 px-6 py-3 text-[15px] font-medium text-white/80 transition hover:border-white/30 hover:text-white"
-        >
-          Free for students
-        </a>
       </div>
-      <p className="mt-4 text-sm text-white/35">$1.99 · one-time · no subscription</p>
+      <p className="mt-4 text-sm">
+        <span className="font-medium text-white">Free for a limited time</span>
+        <span className="text-white/35"> — normally $1.99, one-time.</span>
+      </p>
 
       <div className="mx-auto mt-20 max-w-md">
         <MenuMock />
@@ -194,6 +181,41 @@ function Bar({ pct, className = "" }: { pct: number; className?: string }) {
   );
 }
 
+/* Drop PNG/JPG files into apps/web/public/screenshots/ matching these names.
+   Missing images hide themselves, so add as many as you have. */
+const screenshots = [
+  { src: "/screenshots/dashboard.png", caption: "The dashboard — trends, projects & models" },
+  { src: "/screenshots/menu.png", caption: "Live status in the menu bar" },
+  { src: "/screenshots/sessions.png", caption: "Every concurrent session at a glance" },
+];
+
+function Screenshots() {
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-20">
+      <div className="grid gap-6 md:grid-cols-2">
+        {screenshots.map((s, i) => (
+          <figure
+            key={s.src}
+            className={`overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] ${i === 0 ? "md:col-span-2" : ""}`}
+          >
+            <img
+              src={s.src}
+              alt={s.caption}
+              loading="lazy"
+              className="w-full"
+              onError={(e) => {
+                const fig = e.currentTarget.closest("figure");
+                if (fig) (fig as HTMLElement).style.display = "none";
+              }}
+            />
+            <figcaption className="px-5 py-3 text-sm text-white/45">{s.caption}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Features() {
   return (
     <section id="features" className="mx-auto max-w-6xl px-6 py-28">
@@ -216,22 +238,25 @@ function Features() {
 
 function Pricing() {
   return (
-    <section id="pricing" className="mx-auto max-w-6xl px-6 py-28">
+    <section id="download" className="mx-auto max-w-6xl px-6 py-28">
       <div className="mx-auto max-w-md">
         <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-10 text-center">
-          <p className="text-sm font-medium uppercase tracking-wide text-white/40">One-time purchase</p>
-          <div className="mt-4 flex items-baseline justify-center gap-1">
-            <span className="text-6xl font-semibold tracking-tight">$1.99</span>
+          <span className="inline-block rounded-full border border-white/15 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/70">
+            Limited-time offer
+          </span>
+          <div className="mt-6 flex items-baseline justify-center gap-3">
+            <span className="text-6xl font-semibold tracking-tight">$0</span>
+            <span className="text-2xl font-medium text-white/30 line-through">$1.99</span>
           </div>
-          <p className="mt-2 text-white/45">Yours forever. No subscription.</p>
+          <p className="mt-2 text-white/45">Free while we launch. One-time, yours forever.</p>
           <a
             href="#"
             className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 font-medium text-black transition hover:bg-white/90"
           >
-            <Apple className="h-4.5 w-4.5" /> Download for macOS
+            <Apple className="h-4.5 w-4.5" /> Download for macOS — Free
           </a>
           <div className="mt-6 border-t border-white/10 pt-6 text-sm text-white/50">
-            <span className="font-medium text-white/80">Student?</span> It's free — just{" "}
+            <span className="font-medium text-white/80">Students</span> always get it free —{" "}
             <a className="underline decoration-white/30 underline-offset-4 hover:text-white" href="mailto:students@anthrocite.app">
               email us
             </a>{" "}
