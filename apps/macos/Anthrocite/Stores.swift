@@ -20,7 +20,7 @@ final class Stores {
         pricing.start()
         // Keep the desktop widgets fed with a fresh snapshot.
         WidgetBridge.update(usage: usage, status: status, pricing: pricing)
-        widgetTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        widgetTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task { @MainActor in
                 WidgetBridge.update(usage: self.usage, status: self.status, pricing: self.pricing)

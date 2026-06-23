@@ -47,6 +47,10 @@ final class StatusStore: ObservableObject {
     /// Session ids that were working on the previous reload, to detect the
     /// working → idle transition that fires the completion sound.
     private var working: Set<String> = []
+    /// Cached Codex live-scan result, refreshed every few seconds (the rollout
+    /// directory walk is expensive to run every reload).
+    private var cachedCodex: CodexLive.Result?
+    private var lastCodexScan = Date.distantPast
     private var timer: Timer?
 
     /// A session is "active" (shown) only if its file was written recently.
@@ -130,7 +134,13 @@ final class StatusStore: ObservableObject {
         }
 
         // Codex live sessions (CLI + Desktop), read from ~/.codex/sessions.
-        let codex = CodexLive.scan(now: now)
+        // Walking the rollout dirs is the heavy part, so only re-scan every few
+        // seconds and reuse the cached result on the other reloads.
+        if cachedCodex == nil || now.timeIntervalSince(lastCodexScan) > 4 {
+            cachedCodex = CodexLive.scan(now: now)
+            lastCodexScan = now
+        }
+        let codex = cachedCodex!
         for var cs in codex.sessions {
             seenIDs.insert(cs.id)
             if cs.phase == .working {

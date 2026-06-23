@@ -44,15 +44,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             statusItem.button?.font = NSFont.monospacedDigitSystemFont(ofSize: f.pointSize, weight: .regular)
         }
         refreshButton()
-        updateIcon()
+        syncAnimation()
 
         tick = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.refreshButton()
-        }
-        // A faster timer drives the icon animation (and applies a freshly-chosen
-        // icon/colour within a frame). It rests cheaply when nothing's working.
-        animTimer = Timer.scheduledTimer(withTimeInterval: 0.09, repeats: true) { [weak self] _ in
-            self?.updateIcon()
+            self?.syncAnimation()
         }
     }
 
@@ -147,38 +143,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private static let logoBase = NSImage(named: "MenuBarLogo")
 
-    private var wasAnimating = false
+    // Styled images are cached per (icon, accent) so we never re-create/tint an
+    // NSImage on a hot path. The fast frame timer only runs while animating.
+    private var cacheKey = ""
+    private var cachedResting: NSImage?
+    private var cachedFrames: [NSImage] = []
+    private var animating = false
 
-    /// Cycles animation frames while any session is working; when idle it always
-    /// settles back on the Anthrocite logo (fading in on the work→idle hand-off),
-    /// whatever animated style is selected. Runs ~11×/sec off `animTimer`.
-    private func updateIcon() {
-        guard let button = statusItem.button else { return }
-        let choice = iconChoice
-        let frames = IconArt.frames(for: choice)
-        let animating = choice.isAnimated && !frames.isEmpty && !stores.status.workingSessions.isEmpty
-
-        if animating {
-            frameIndex = (frameIndex + 1) % frames.count
-            button.image = IconArt.style(frames[frameIndex], color: choice.isColor, accent: accent)
-            wasAnimating = true
-        } else {
-            frameIndex = 0
-            if wasAnimating {
-                fadeButtonImage(button, to: restingImage)   // animation just finished
-            } else {
-                button.image = restingImage
-            }
-            wasAnimating = false
+    private func rebuildCacheIfNeeded() {
+        let key = "\(iconChoice.rawValue)|\(accent.rawValue)"
+        guard key != cacheKey else { return }
+        cacheKey = key
+        // The crab ignores the accent (its picker is disabled), so its resting
+        // logo uses the default template colour, never a stale accent.
+        let restAccent: AccentChoice = iconChoice.isColor ? .system : accent
+        cachedResting = IconArt.style(Self.logoBase, color: false, accent: restAccent)
+        cachedFrames = IconArt.frames(for: iconChoice).compactMap {
+            IconArt.style($0, color: iconChoice.isColor, accent: accent)
         }
     }
 
-    /// The idle icon is always Anthrocite's own mark, regardless of style. The
-    /// crab ignores the accent (its picker is disabled), so its resting logo
-    /// uses the default template colour instead of a stale accent (e.g. orange).
-    private var restingImage: NSImage? {
-        let effective: AccentChoice = iconChoice.isColor ? .system : accent
-        return IconArt.style(Self.logoBase, color: false, accent: effective)
+    /// Starts or stops the frame timer based on whether an animated icon is
+    /// selected and something is working. Called once per second from `tick`.
+    private func syncAnimation() {
+        rebuildCacheIfNeeded()
+        let shouldAnimate = iconChoice.isAnimated && !cachedFrames.isEmpty
+            && !stores.status.workingSessions.isEmpty
+        if shouldAnimate {
+            if animTimer == nil {
+                animating = true
+                animTimer = Timer.scheduledTimer(withTimeInterval: 0.09, repeats: true) { [weak self] _ in
+                    self?.animateTick()
+                }
+            }
+        } else {
+            let wasAnimating = animating
+            animTimer?.invalidate(); animTimer = nil
+            animating = false
+            frameIndex = 0
+            if wasAnimating, let button = statusItem.button {
+                fadeButtonImage(button, to: cachedResting)   // work just finished
+            } else {
+                setRestingImage()                            // cheap no-op if unchanged
+            }
+        }
+    }
+
+    private func animateTick() {
+        guard let button = statusItem.button, !cachedFrames.isEmpty else { return }
+        frameIndex = (frameIndex + 1) % cachedFrames.count
+        button.image = cachedFrames[frameIndex]
+    }
+
+    /// Idle icon is always Anthrocite's mark; set only when it actually changes.
+    private func setRestingImage() {
+        guard let button = statusItem.button, button.image !== cachedResting else { return }
+        button.image = cachedResting
     }
 
     private func fadeButtonImage(_ button: NSStatusBarButton, to image: NSImage?) {

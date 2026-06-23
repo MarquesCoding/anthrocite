@@ -23,7 +23,9 @@ final class UsageStore: ObservableObject {
     func start() {
         loadCache()
         Task { await refresh() }
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+        // Totals don't need sub-10s freshness; scanning the transcript corpus
+        // more often than this is the main idle-CPU cost.
+        timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             Task { await self?.refresh() }
         }
     }
