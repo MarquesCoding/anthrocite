@@ -84,10 +84,6 @@ function Hero({ slotRef, inHero }: { slotRef: React.RefObject<HTMLDivElement | n
   return (
     <section className="relative px-6 pt-36 text-center">
       <motion.div variants={container} initial="hidden" animate="show">
-        <motion.div variants={item} className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[13px] text-white/60">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          Free &amp; open source · macOS 15+
-        </motion.div>
         <motion.h1 variants={item} className="mx-auto max-w-5xl text-[15vw] font-semibold leading-[0.92] tracking-[-0.04em] sm:text-[112px]">
           Every agent.
           <br />
