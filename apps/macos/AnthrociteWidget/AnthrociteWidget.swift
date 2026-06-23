@@ -34,7 +34,12 @@ struct AnthrociteWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "app.anthrocite.widget", provider: Provider()) { entry in
             WidgetView(snapshot: entry.snapshot)
-                .containerBackground(.regularMaterial, for: .widget)  // translucent/glossy like system widgets
+                // Solid opaque background (like FedEx's) — clean and readable when
+                // widgets aren't dimmed. The system still applies Liquid Glass in
+                // the "Clear" widget style.
+                .containerBackground(for: .widget) {
+                    Color(red: 0.07, green: 0.07, blue: 0.08)
+                }
         }
         .configurationDisplayName("Anthrocite")
         .description("Live status, usage, cost and limits for your AI coding agents.")
