@@ -6,30 +6,25 @@ struct AnthrociteApp: App {
     private let stores = Stores.shared
 
     var body: some Scene {
-        // Menu bar — works standalone, no window required.
-        MenuBarExtra {
-            MenuContentView(usage: stores.usage, status: stores.status, pricing: stores.pricing)
-        } label: {
-            MenuBarLabel(status: stores.status)
-        }
-        .menuBarExtraStyle(.window)
-
-        // Native macOS window scenes (Liquid Glass chrome).
+        // Native window scenes (Liquid Glass chrome). The menu bar itself is an
+        // AppKit NSStatusItem owned by AppDelegate — it works with no window open.
         Window("\(AppInfo.name) Dashboard", id: "dashboard") {
             DashboardView(usage: stores.usage, pricing: stores.pricing)
+                .captureSceneActions()
                 .scenePolicy()
         }
         .defaultSize(width: 900, height: 620)
 
         Settings {
             SettingsView(usage: stores.usage, pricing: stores.pricing)
+                .captureSceneActions()
                 .scenePolicy()
         }
     }
 }
 
-/// While any real window is open, become a regular app (dock icon + window
-/// management); drop back to a menu-bar agent when it closes.
+/// Become a regular app (dock icon) while a window is open; drop back to a
+/// menu-bar agent when the last window closes — the menu bar always stays.
 private struct ScenePolicy: ViewModifier {
     func body(content: Content) -> some View {
         content
