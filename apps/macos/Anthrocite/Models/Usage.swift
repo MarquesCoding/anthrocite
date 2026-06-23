@@ -56,4 +56,25 @@ struct ModelBreakdown: Codable, Sendable, Equatable {
     func totalCost(_ table: PricingTable) -> Double {
         byModel.reduce(0) { $0 + $1.value.cost(table.pricing(for: $1.key)) }
     }
+
+    /// Keep only models belonging to the given provider (`.all` = no filter).
+    func filtered(_ provider: Provider) -> ModelBreakdown {
+        guard provider != .all else { return self }
+        var b = ModelBreakdown()
+        b.byModel = byModel.filter { Provider.of($0.key) == provider }
+        return b
+    }
+}
+
+/// Which coding agent a model id belongs to.
+enum Provider: String, CaseIterable, Identifiable, Sendable {
+    case all = "All", claude = "Claude", codex = "Codex"
+    var id: String { rawValue }
+
+    static func of(_ modelID: String) -> Provider {
+        let m = modelID.lowercased()
+        if m.contains("gpt") || m.contains("codex") || m.hasPrefix("o1")
+            || m.hasPrefix("o3") || m.hasPrefix("o4") { return .codex }
+        return .claude
+    }
 }

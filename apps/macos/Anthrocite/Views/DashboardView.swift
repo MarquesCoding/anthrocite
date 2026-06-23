@@ -6,6 +6,8 @@ struct DashboardView: View {
     @ObservedObject var usage: UsageStore
     @ObservedObject var pricing: PricingStore
     @ObservedObject private var nav = Navigation.shared
+    @AppStorage("dashProvider") private var providerRaw = Provider.all.rawValue
+    private var provider: Provider { Provider(rawValue: providerRaw) ?? .all }
 
     var body: some View {
         NavigationSplitView {
@@ -19,26 +21,40 @@ struct DashboardView: View {
             }
             .navigationSplitViewColumnWidth(200)
         } detail: {
-            switch nav.pane {
-            case .overview: OverviewPane(usage: usage, pricing: pricing)
-            case .projects: TablePane(title: "Projects", rows: projectRows)
-            case .models:   ModelsPane(rows: modelRows)
-            case .general:  GeneralPane()
-            case .pricing:  PricingPane(usage: usage, pricing: pricing)
-            case .about:    AboutPane()
+            Group {
+                switch nav.pane {
+                case .overview: OverviewPane(usage: usage, pricing: pricing, provider: provider)
+                case .projects: TablePane(title: "Projects", rows: projectRows)
+                case .models:   ModelsPane(rows: modelRows)
+                case .general:  GeneralPane()
+                case .pricing:  PricingPane(usage: usage, pricing: pricing)
+                case .about:    AboutPane()
+                }
+            }
+            .toolbar {
+                if DashboardPane.usage.contains(nav.pane) {
+                    ToolbarItem {
+                        Picker("Provider", selection: $providerRaw) {
+                            ForEach(Provider.allCases) { Text($0.rawValue).tag($0.rawValue) }
+                        }
+                        .pickerStyle(.segmented).labelsHidden().fixedSize()
+                    }
+                }
             }
         }
     }
 
     private var projectRows: [UsageRow] {
         let table = pricing.table
-        return usage.index.byProject.map {
-            UsageRow(id: $0.key, name: $0.key, tokens: $0.value.totalTokens, cost: $0.value.totalCost(table))
+        return usage.index.byProject.compactMap { name, bd -> UsageRow? in
+            let b = bd.filtered(provider)
+            guard b.totalTokens > 0 else { return nil }
+            return UsageRow(id: name, name: name, tokens: b.totalTokens, cost: b.totalCost(table))
         }.sorted { $0.tokens > $1.tokens }
     }
     private var modelRows: [UsageRow] {
         let table = pricing.table
-        return usage.index.total.byModel.map {
+        return usage.index.total.filtered(provider).byModel.map {
             UsageRow(id: $0.key, name: $0.key, tokens: $0.value.total,
                      cost: $0.value.cost(table.pricing(for: $0.key)))
         }.sorted { $0.tokens > $1.tokens }
@@ -62,9 +78,10 @@ private struct DailyPoint: Identifiable {
 }
 
 @MainActor
-private func series(_ usage: UsageStore, _ table: PricingTable, days: Int) -> [DailyPoint] {
+private func series(_ usage: UsageStore, _ table: PricingTable, days: Int, provider: Provider) -> [DailyPoint] {
     usage.index.dailySeries(days: days).map {
-        DailyPoint(id: $0.date, date: $0.date, tokens: $0.breakdown.totalTokens, cost: $0.breakdown.totalCost(table))
+        let b = $0.breakdown.filtered(provider)
+        return DailyPoint(id: $0.date, date: $0.date, tokens: b.totalTokens, cost: b.totalCost(table))
     }
 }
 
@@ -73,6 +90,7 @@ private func series(_ usage: UsageStore, _ table: PricingTable, days: Int) -> [D
 private struct OverviewPane: View {
     @ObservedObject var usage: UsageStore
     @ObservedObject var pricing: PricingStore
+    let provider: Provider
 
     // Stable snapshot so scrolling (which re-evaluates the body) doesn't
     // recompute the charts and retrigger their animations.
@@ -84,11 +102,12 @@ private struct OverviewPane: View {
 
     private func recompute() {
         let table = pricing.table
-        s30 = series(usage, table, days: 30)
-        allTimeTokens = usage.index.total.totalTokens
-        allTimeCost = usage.index.total.totalCost(table)
+        s30 = series(usage, table, days: 30, provider: provider)
+        let total = usage.index.total.filtered(provider)
+        allTimeTokens = total.totalTokens
+        allTimeCost = total.totalCost(table)
         weekTokens = s30.suffix(7).reduce(0) { $0 + $1.tokens }
-        todayTokens = usage.index.todayBreakdown.totalTokens
+        todayTokens = usage.index.todayBreakdown.filtered(provider).totalTokens
     }
 
     var body: some View {
@@ -134,6 +153,7 @@ private struct OverviewPane: View {
         .onAppear(perform: recompute)
         .onChange(of: usage.lastUpdated) { _, _ in recompute() }
         .onChange(of: pricing.table) { _, _ in recompute() }
+        .onChange(of: provider) { _, _ in recompute() }
     }
 }
 

@@ -69,15 +69,24 @@ struct MenuContentView: View {
     }
 
     private var sessionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let claude = status.sessions.filter { !$0.isCodex }
+        let codex = status.sessions.filter { $0.isCodex }
+        return VStack(alignment: .leading, spacing: 12) {
+            if !claude.isEmpty { providerGroup("Claude Code", claude) }
+            if !codex.isEmpty { providerGroup("Codex", codex) }
+        }
+    }
+
+    private func providerGroup(_ title: String, _ rows: [LiveSession]) -> some View {
+        let working = rows.filter(\.isWorking).count
+        return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(status.sessions.count == 1 ? "Session" : "Sessions")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
-                if status.workingCount > 0 {
-                    Text("\(status.workingCount) working").font(.system(size: 12)).foregroundStyle(.secondary)
+                Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                if working > 0 {
+                    Text("\(working) working").font(.system(size: 12)).foregroundStyle(.secondary)
                 }
             }
-            ForEach(status.sessions) { sessionRow($0) }
+            ForEach(rows) { sessionRow($0) }
         }
     }
     private func sessionRow(_ s: LiveSession) -> some View {

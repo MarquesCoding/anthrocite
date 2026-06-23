@@ -29,6 +29,8 @@ struct LiveSession: Identifiable, Sendable {
     var lastSeen: Date
 
     var isWorking: Bool { phase == .working }
+    /// Codex live sessions are keyed "codex:<id>"; everything else is Claude.
+    var isCodex: Bool { id.hasPrefix("codex:") }
 }
 
 /// Watches `~/.claude/claudetracker-status/` (one file per session, written by
@@ -123,6 +125,22 @@ final class StatusStore: ObservableObject {
                 activeSince: activeSince[sid],
                 lastSeen: mtime))
         }
+
+        // Codex live sessions (CLI + Desktop), read from ~/.codex/sessions.
+        let codex = CodexLive.scan(now: now)
+        for var cs in codex.sessions {
+            seenIDs.insert(cs.id)
+            if cs.phase == .working {
+                if activeSince[cs.id] == nil { activeSince[cs.id] = now }
+            } else {
+                activeSince[cs.id] = nil
+            }
+            cs.activeSince = activeSince[cs.id]
+            live.append(cs)
+        }
+        // Fall back to Codex's own limits if no Claude limits are present.
+        if fiveHour == nil { fiveHour = codex.fiveHour }
+        if sevenDay == nil { sevenDay = codex.sevenDay }
 
         // Drop timers for sessions that disappeared.
         activeSince = activeSince.filter { seenIDs.contains($0.key) }
