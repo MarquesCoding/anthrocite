@@ -167,7 +167,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Anthrocite;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.anthrocite.Anthrocite;
 				PRODUCT_NAME = Anthrocite;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -190,7 +190,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Anthrocite;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.anthrocite.Anthrocite;
 				PRODUCT_NAME = Anthrocite;
 				SWIFT_EMIT_LOC_STRINGS = YES;
