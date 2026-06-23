@@ -175,7 +175,7 @@ function DesktopMock() {
       </div>
 
       {/* dock */}
-      <div className="absolute inset-x-0 bottom-3 flex justify-center">
+      <div className="absolute inset-x-0 bottom-3 z-50 flex justify-center">
         <div className="flex items-center gap-2 rounded-[20px] border border-white/15 bg-[#26262b] px-2.5 py-2 shadow-2xl">
           <div className="flex flex-col items-center">
             <img src="/icon.png" alt="Anthrocite" className="h-12 w-12 rounded-[12px] shadow-md" />
