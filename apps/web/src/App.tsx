@@ -16,7 +16,8 @@ import {
 } from "@tabler/icons-react";
 
 const REPO = "https://github.com/MarquesCoding/anthrocite";
-const RELEASES = `${REPO}/releases`;
+// Always resolves to the newest release's DMG asset.
+const DOWNLOAD = `${REPO}/releases/latest/download/Anthrocite.dmg`;
 
 const container: Variants = {
   hidden: {},
@@ -56,7 +57,7 @@ function Cta({ compact = false }: { compact?: boolean }) {
       <motion.a layout transition={swing} href={REPO} className={`${base} border border-white/15 text-white/80 hover:border-white/30`}>
         <IconBrandGithubFilled size={sz} /> GitHub
       </motion.a>
-      <motion.a layout transition={swing} href={RELEASES} className={`${base} bg-white text-black hover:bg-white/90`}>
+      <motion.a layout transition={swing} href={DOWNLOAD} className={`${base} bg-white text-black hover:bg-white/90`}>
         <IconBrandAppleFilled size={sz} /> Download
       </motion.a>
     </motion.div>
@@ -308,7 +309,7 @@ function Screenshots() {
 function Footer() {
   return (
     <footer className="relative overflow-hidden px-6 pt-16 pb-24 text-center">
-      <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
+      <a href={DOWNLOAD} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
         <IconBrandAppleFilled size={19} /> Download for macOS
       </a>
       <div className="mt-8 flex items-center justify-center">
