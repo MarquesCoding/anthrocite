@@ -56,8 +56,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         let dash = add("Open Dashboard…", #selector(openDashboard), menu)
         dash.keyEquivalent = "d"
-        let settings = add("Settings…", #selector(openSettings), menu)
-        settings.keyEquivalent = ","
 
         menu.addItem(.separator())
         toggle("Show status text", showStatus, #selector(toggleStatus), enabled: true, menu)
@@ -90,13 +88,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: Actions
 
-    @objc private func openDashboard() {
-        Navigation.shared.pane = .overview
-        WindowBridge.shared.open("dashboard")
-    }
-    @objc private func openSettings() {
-        Navigation.shared.pane = .general
-        WindowBridge.shared.open("dashboard")
+    @objc private func openDashboard() { showDashboard(.overview) }
+
+    private func showDashboard(_ pane: DashboardPane) {
+        Navigation.shared.pane = pane
+        // Become a regular app and activate BEFORE opening, so the window
+        // materialises immediately and comes to the front.
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        if let existing = NSApp.windows.first(where: { $0.identifier?.rawValue.contains("dashboard") == true || $0.title.contains("Dashboard") }) {
+            existing.makeKeyAndOrderFront(nil)
+        } else {
+            WindowBridge.shared.open("dashboard")
+        }
     }
     @objc private func toggleStatus() { UserDefaults.standard.set(!showStatus, forKey: Prefs.showStatusKey) }
     @objc private func toggleTimer() { UserDefaults.standard.set(!showTimer, forKey: Prefs.showTimerKey) }
