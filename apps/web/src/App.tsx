@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, useInView, AnimatePresence, type Variants } from "framer-motion";
+import { motion, useInView, LayoutGroup, type Variants } from "framer-motion";
 import {
   IconBoltFilled,
   IconStack2Filled,
@@ -28,19 +28,39 @@ const item: Variants = {
 };
 
 export default function App() {
-  const ctaRef = useRef<HTMLDivElement>(null);
-  const ctaInView = useInView(ctaRef, { margin: "-72px 0px 0px 0px" });
+  const slotRef = useRef<HTMLDivElement>(null);
+  const inHero = useInView(slotRef, { margin: "-72px 0px 0px 0px" });
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <Nav showCta={!ctaInView} />
-      <Hero ctaRef={ctaRef} />
-      <Features />
-      <Footer />
-    </div>
+    <LayoutGroup>
+      <div className="min-h-screen overflow-x-hidden">
+        <Nav inHero={inHero} />
+        <Hero slotRef={slotRef} inHero={inHero} />
+        <Features />
+        <Footer />
+      </div>
+    </LayoutGroup>
   );
 }
 
-function Nav({ showCta }: { showCta: boolean }) {
+/* The single CTA pair that morphs between the hero and the nav via layoutId. */
+const swing = { type: "spring" as const, stiffness: 320, damping: 18, mass: 0.9 };
+
+function Cta({ compact = false }: { compact?: boolean }) {
+  const pad = compact ? "px-3.5 py-1.5 text-sm" : "px-7 py-3.5 text-[15px]";
+  const sz = compact ? 16 : 19;
+  return (
+    <motion.div layoutId="cta" transition={swing} className="flex items-center gap-2.5">
+      <motion.a layout transition={swing} href={REPO} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-white/15 font-medium text-white/80 transition-colors hover:border-white/30 ${pad}`}>
+        <IconBrandGithubFilled size={sz} /> GitHub
+      </motion.a>
+      <motion.a layout transition={swing} href={RELEASES} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white font-medium text-black transition-colors hover:bg-white/90 ${pad}`}>
+        <IconBrandAppleFilled size={sz} /> Download
+      </motion.a>
+    </motion.div>
+  );
+}
+
+function Nav({ inHero }: { inHero: boolean }) {
   return (
     <header className="fixed inset-x-0 top-4 z-50 px-4">
       <div className="mx-auto flex h-12 max-w-2xl items-center justify-between rounded-full border border-white/10 bg-white/[0.04] px-4 backdrop-blur-xl">
@@ -48,30 +68,16 @@ function Nav({ showCta }: { showCta: boolean }) {
           <img src="/logo.svg" alt="" className="h-5 w-auto" />
           <span className="text-[15px] font-semibold tracking-tight">Anthrocite</span>
         </a>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <a href="#features" className="rounded-full px-3 py-1.5 text-sm text-white/65 transition hover:text-white">Features</a>
-          <AnimatePresence>
-            {showCta && (
-              <motion.div
-                key="navcta"
-                initial={{ opacity: 0, x: 12, scale: 0.9 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 12, scale: 0.9 }}
-                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                className="flex items-center gap-1"
-              >
-                <a href={REPO} aria-label="GitHub" className="rounded-full p-2 text-white/65 transition hover:text-white"><IconBrandGithubFilled size={18} /></a>
-                <a href={RELEASES} className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black transition hover:bg-white/90">Download</a>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {!inHero && <Cta compact />}
         </div>
       </div>
     </header>
   );
 }
 
-function Hero({ ctaRef }: { ctaRef: React.RefObject<HTMLDivElement | null> }) {
+function Hero({ slotRef, inHero }: { slotRef: React.RefObject<HTMLDivElement | null>; inHero: boolean }) {
   return (
     <section className="relative px-6 pt-36 text-center">
       <motion.div variants={container} initial="hidden" animate="show">
@@ -88,13 +94,8 @@ function Hero({ ctaRef }: { ctaRef: React.RefObject<HTMLDivElement | null> }) {
           Live status, usage, cost and your real rate limits for Claude Code —
           right in your menu bar, in real time.
         </motion.p>
-        <motion.div ref={ctaRef} variants={item} className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a href={RELEASES} className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-medium text-black transition hover:bg-white/90">
-            <IconBrandAppleFilled size={19} /> Download for macOS
-          </a>
-          <a href={REPO} className="inline-flex items-center gap-2 rounded-full border border-white/15 px-7 py-3.5 text-[15px] font-medium text-white/80 transition hover:border-white/30">
-            <IconBrandGithubFilled size={19} /> Star on GitHub
-          </a>
+        <motion.div ref={slotRef} variants={item} className="mt-8 flex min-h-[52px] items-center justify-center">
+          {inHero && <Cta />}
         </motion.div>
       </motion.div>
 
@@ -136,12 +137,15 @@ function DesktopMock() {
           className="absolute right-[8%] top-1/2 h-[80%] w-[48%] -translate-y-1/2 rotate-12 rounded-full opacity-90"
           style={{ background: "conic-gradient(from 30deg, #6aa8ff, #b18bff, #ff7ad5, #ffd36a, #6ff0e0, #6aa8ff)", filter: "blur(16px)" }}
         />
-        <img
-          src="/hero-bg.jpg"
-          alt=""
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
           className="absolute inset-0 h-full w-full object-cover"
-          onError={(e) => (e.currentTarget.style.display = "none")}
-        />
+        >
+          <source src="/background.mp4" type="video/mp4" />
+        </video>
       </div>
       {/* menu bar */}
       <div className="absolute inset-x-0 top-0 flex h-8 items-center justify-end gap-4 bg-black/20 px-4 text-[13px] text-white backdrop-blur-sm">
@@ -169,6 +173,19 @@ function DesktopMock() {
         <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-white/40">Limits</p>
         <Limit label="5-Hour Session" pct={13} sub="resets in 2h 4m" />
         <Limit label="Weekly" pct={2} sub="resets in 6d 1h" />
+      </div>
+
+      {/* dock */}
+      <div className="absolute inset-x-0 bottom-3 flex justify-center">
+        <div className="flex items-center gap-2 rounded-[20px] border border-white/15 bg-zinc-800/55 px-2.5 py-2 shadow-2xl backdrop-blur-2xl">
+          <div className="flex flex-col items-center">
+            <img src="/icon.png" alt="Anthrocite" className="h-12 w-12 rounded-[12px] shadow-md" />
+            <span className="mt-1 h-1 w-1 rounded-full bg-white/70" />
+          </div>
+          <div className="mx-0.5 h-12 w-px bg-white/20" />
+          <img src="/trash.png" alt="Trash" className="h-12 w-12 object-contain"
+            onError={(e) => (e.currentTarget.style.display = "none")} />
+        </div>
       </div>
     </div>
   );
