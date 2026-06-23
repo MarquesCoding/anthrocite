@@ -42,6 +42,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Closing a window must never quit the app — the menu bar lives on.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
+    /// Only the menu bar's "Quit" actually quits. The dock's right-click → Quit
+    /// (and ⌘Q) instead just close any open window and stay a menu-bar agent.
+    private var userRequestedQuit = false
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if userRequestedQuit { return .terminateNow }
+        for window in NSApp.windows where window.styleMask.contains(.titled) {
+            window.close()
+        }
+        NSApp.setActivationPolicy(.accessory)
+        return .terminateCancel
+    }
+
     // MARK: Menu
 
     func menuWillOpen(_ menu: NSMenu) { menuOpen = true }
@@ -109,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleStatus() { UserDefaults.standard.set(!showStatus, forKey: Prefs.showStatusKey) }
     @objc private func toggleTimer() { UserDefaults.standard.set(!showTimer, forKey: Prefs.showTimerKey) }
     @objc private func refreshNow() { Task { await stores.usage.refresh() } }
-    @objc private func quit() { NSApp.terminate(nil) }
+    @objc private func quit() { userRequestedQuit = true; NSApp.terminate(nil) }
 
     // MARK: Status-bar button
 
