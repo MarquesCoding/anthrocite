@@ -15,6 +15,12 @@ enum CodexScanner {
         ]
     }()
 
+    /// True when a Codex session directory exists — Codex logs usage natively,
+    /// so no hook install is needed; we just read its rollouts.
+    static var isDetected: Bool {
+        sessionDirs.contains { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
     private static let iso: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -76,7 +82,8 @@ enum CodexScanner {
             let model = index.codexModel[path] ?? "gpt-5-codex"
             let project = index.codexProject[path] ?? "unknown"
             let ts = (obj["timestamp"] as? String).flatMap { iso.date(from: $0) } ?? Date()
-            index.record(counts: counts, timestamp: ts, sessionID: path, model: model, project: project)
+            index.record(counts: counts, timestamp: ts, sessionID: path,
+                         model: model, project: project, origin: .codex)
         default:
             break
         }

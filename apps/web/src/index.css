@@ -3,6 +3,8 @@
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
     system-ui, sans-serif;
+  /* Display sans for headings → `font-display` utility. */
+  --font-display: "Geist", var(--font-sans);
 }
 
 html {

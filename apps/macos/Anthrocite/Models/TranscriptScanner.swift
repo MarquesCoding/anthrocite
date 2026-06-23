@@ -7,6 +7,19 @@ enum TranscriptScanner {
         .homeDirectoryForCurrentUser
         .appending(path: ".claude/projects", directoryHint: .isDirectory)
 
+    /// Xcode 26's coding intelligence runs a bundled Claude agent that writes
+    /// Claude-format JSONL transcripts here — separate from the CLI's `~/.claude`.
+    static let xcodeProjectsDir: URL = FileManager.default
+        .homeDirectoryForCurrentUser
+        .appending(path: "Library/Developer/Xcode/CodingAssistant/ClaudeAgentConfig/projects",
+                   directoryHint: .isDirectory)
+
+    /// True once Xcode's coding intelligence has written transcripts — it logs
+    /// natively (no hook needed), so we just read them.
+    static var xcodeDetected: Bool {
+        FileManager.default.fileExists(atPath: xcodeProjectsDir.path)
+    }
+
     private static let isoFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -22,11 +35,19 @@ enum TranscriptScanner {
         isoFractional.date(from: s) ?? isoPlain.date(from: s)
     }
 
-    /// Returns an updated copy of `index` after folding in all new transcript data.
+    /// Returns an updated copy of `index` after folding in all new transcript
+    /// data from both Claude Code (the CLI) and Xcode's coding intelligence.
     static func scan(into index: AggregateIndex) -> AggregateIndex {
+        var index = scan(dir: projectsDir, origin: .claude, into: index)
+        index = scan(dir: xcodeProjectsDir, origin: .xcode, into: index)
+        index.prune()
+        return index
+    }
+
+    private static func scan(dir: URL, origin: Provider, into index: AggregateIndex) -> AggregateIndex {
         var index = index
         let fm = FileManager.default
-        guard let walker = fm.enumerator(at: projectsDir,
+        guard let walker = fm.enumerator(at: dir,
                                          includingPropertiesForKeys: [.fileSizeKey],
                                          options: [.skipsHiddenFiles]) else {
             return index
@@ -48,15 +69,14 @@ enum TranscriptScanner {
             guard let lastNL = chunk.lastIndex(of: 0x0A) else { continue }
             let consumed = chunk[...lastNL]
             for lineData in consumed.split(separator: 0x0A, omittingEmptySubsequences: true) {
-                parseLine(Data(lineData), into: &index)
+                parseLine(Data(lineData), origin: origin, into: &index)
             }
             index.fileOffsets[path] = offset + consumed.count
         }
-        index.prune()
         return index
     }
 
-    private static func parseLine(_ data: Data, into index: inout AggregateIndex) {
+    private static func parseLine(_ data: Data, origin: Provider, into index: inout AggregateIndex) {
         guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               (obj["type"] as? String) == "assistant",
               let message = obj["message"] as? [String: Any],
@@ -74,7 +94,8 @@ enum TranscriptScanner {
         let ts = (obj["timestamp"] as? String).flatMap(parseDate) ?? Date()
         let project = (obj["cwd"] as? String).map { URL(filePath: $0).lastPathComponent } ?? "unknown"
 
-        index.record(counts: counts, timestamp: ts, sessionID: sessionID, model: model, project: project)
+        index.record(counts: counts, timestamp: ts, sessionID: sessionID,
+                     model: model, project: project, origin: origin)
     }
 
     private static func intVal(_ any: Any?) -> Int {

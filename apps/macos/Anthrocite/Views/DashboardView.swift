@@ -54,9 +54,13 @@ struct DashboardView: View {
     }
     private var modelRows: [UsageRow] {
         let table = pricing.table
-        return usage.index.total.filtered(provider).byModel.map {
-            UsageRow(id: $0.key, name: $0.key, tokens: $0.value.total,
-                     cost: $0.value.cost(table.pricing(for: $0.key)))
+        return usage.index.total.filtered(provider).byModel.map { key, counts in
+            let model = ModelKey.model(key)
+            // When showing all origins, label shared models with their agent.
+            let name = provider == .all && ModelKey.origin(key) != .claude
+                ? "\(model) · \(ModelKey.origin(key).rawValue)" : model
+            return UsageRow(id: key, name: name, tokens: counts.total,
+                            cost: counts.cost(table.pricing(for: model)))
         }.sorted { $0.tokens > $1.tokens }
     }
 }
@@ -207,6 +211,13 @@ private struct GeneralPane: View {
     @State private var hooksInstalled = HookInstaller.isInstalled
     @AppStorage(Prefs.showStatusKey) private var showStatus = true
     @AppStorage(Prefs.showTimerKey) private var showTimer = true
+    @AppStorage(Prefs.iconKey) private var iconRaw = IconChoice.logo.rawValue
+    @AppStorage(Prefs.accentKey) private var accentRaw = AccentChoice.system.rawValue
+    @AppStorage(Prefs.soundKey) private var playSound = false
+    @AppStorage(Prefs.countdownKey) private var countdownRaw = CountdownFormat.hhmmss.rawValue
+    @ObservedObject private var updater = Updater.shared
+
+    private var icon: IconChoice { IconChoice(rawValue: iconRaw) ?? .logo }
 
     var body: some View {
         Form {
@@ -215,25 +226,70 @@ private struct GeneralPane: View {
                     .onChange(of: launchAtLogin) { _, v in LoginItem.set(v) }
             }
             Section("Menu Bar") {
+                Picker("Icon", selection: $iconRaw) {
+                    ForEach(IconChoice.allCases) { Text($0.label).tag($0.rawValue) }
+                }
+                Picker("Colour", selection: $accentRaw) {
+                    ForEach(AccentChoice.allCases) { Text($0.rawValue).tag($0.rawValue) }
+                }
+                .disabled(icon.isColor)   // the crab keeps its own colours
+                Picker("Limit countdown", selection: $countdownRaw) {
+                    ForEach(CountdownFormat.allCases) { Text($0.rawValue).tag($0.rawValue) }
+                }
                 Toggle("Show status text", isOn: $showStatus)
                 Toggle("Show timer", isOn: $showTimer).disabled(!showStatus)
+                Toggle("Play a sound when a response completes", isOn: $playSound)
             }
             Section {
-                LabeledContent("Status") {
-                    Label(hooksInstalled ? "Installed" : "Not installed",
-                          systemImage: hooksInstalled ? "checkmark.circle.fill" : "exclamationmark.circle")
-                        .foregroundStyle(hooksInstalled ? Color.green : Color.secondary)
-                        .labelStyle(.titleAndIcon)
-                }
+                integrationRow("Claude Code", ok: hooksInstalled,
+                               okLabel: "Installed", offLabel: "Not installed")
                 Button(hooksInstalled ? "Reinstall hooks" : "Install hooks") {
                     HookInstaller.install()
                     hooksInstalled = HookInstaller.isInstalled
                 }
-            } header: { Text("Claude Code integration") }
-            footer: { Text("Installs the statusLine bridge and SessionEnd hook into ~/.claude/settings.json so Anthrocite can read live session data.") }
+                integrationRow("Codex", ok: CodexScanner.isDetected,
+                               okLabel: "Detected", offLabel: "Not found")
+                integrationRow("Xcode", ok: TranscriptScanner.xcodeDetected,
+                               okLabel: "Detected", offLabel: "Not used yet")
+            } header: { Text("Integrations") }
+            footer: { Text("Claude Code needs the statusLine + SessionEnd hooks for live status. Codex and Xcode log usage natively, so they're read automatically once detected.") }
+
+            Section {
+                LabeledContent("Current version", value: "\(AppInfo.version) (\(AppInfo.build))")
+                updatesRow
+            } header: { Text("Updates") }
+            footer: { Text("Checks GitHub for a newer signed release and installs it in place.") }
         }
         .formStyle(.grouped)
         .navigationTitle("General")
+    }
+
+    private func integrationRow(_ name: String, ok: Bool, okLabel: String, offLabel: String) -> some View {
+        LabeledContent(name) {
+            Label(ok ? okLabel : offLabel, systemImage: ok ? "checkmark.circle.fill" : "minus.circle")
+                .foregroundStyle(ok ? Color.green : Color.secondary)
+                .labelStyle(.titleAndIcon)
+        }
+    }
+
+    @ViewBuilder private var updatesRow: some View {
+        switch updater.state {
+        case .checking:
+            HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Checking…").foregroundStyle(.secondary) }
+        case .downloading:
+            HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Downloading update…").foregroundStyle(.secondary) }
+        case .available(let v):
+            Label("Version \(v) available", systemImage: "arrow.down.circle.fill").foregroundStyle(.green)
+            Button("Download & Install") { Task { await updater.downloadAndInstall() } }
+        case .upToDate:
+            Label("You're up to date", systemImage: "checkmark.circle").foregroundStyle(.secondary)
+        case .failed(let msg):
+            Label(msg, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+        case .idle:
+            EmptyView()
+        }
+        Button("Check for Updates") { Task { await updater.check(userInitiated: true) } }
+            .disabled(updater.state == .checking || updater.state == .downloading)
     }
 }
 

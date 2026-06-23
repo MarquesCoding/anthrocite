@@ -45,14 +45,17 @@ struct AggregateIndex: Codable, Sendable {
 
     // MARK: Mutation
 
-    mutating func record(counts: TokenCounts, timestamp: Date,
-                         sessionID: String, model: String, project: String) {
-        total.add(counts, model: model)
+    mutating func record(counts: TokenCounts, timestamp: Date, sessionID: String,
+                         model: String, project: String, origin: Provider) {
+        // Encode the origin into the breakdown key so usage stays separable per
+        // agent even when the same model is shared (e.g. Claude in CLI + Xcode).
+        let key = ModelKey.make(origin, model)
+        total.add(counts, model: key)
         byDay[AggregateIndex.dayKey(for: timestamp), default: ModelBreakdown()]
-            .add(counts, model: model)
-        byProject[project, default: ModelBreakdown()].add(counts, model: model)
+            .add(counts, model: key)
+        byProject[project, default: ModelBreakdown()].add(counts, model: key)
         var s = sessions[sessionID] ?? SessionInfo()
-        s.breakdown.add(counts, model: model)
+        s.breakdown.add(counts, model: key)
         if timestamp >= s.lastTimestamp {
             s.lastTimestamp = timestamp
             s.lastModel = model

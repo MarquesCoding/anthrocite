@@ -17,16 +17,24 @@ enum Fmt {
         return String(format: "$%.2f", amount)
     }
 
-    /// Time remaining until `date`, e.g. "2h 13m" or "4d 6h" or "now".
+    /// Time remaining until `date`, rendered per the user's chosen format
+    /// (defaults to HH:MM:SS so the per-second timer reads as a ticking clock).
     static func countdown(to date: Date, now: Date = Date()) -> String {
-        let secs = Int(date.timeIntervalSince(now))
+        let secs = max(0, Int(date.timeIntervalSince(now)))
         if secs <= 0 { return "now" }
         let d = secs / 86_400
         let h = (secs % 86_400) / 3_600
         let m = (secs % 3_600) / 60
-        if d > 0 { return "\(d)d \(h)h" }
-        if h > 0 { return "\(h)h \(m)m" }
-        return "\(m)m"
+        let s = secs % 60
+        let totalH = secs / 3_600
+        let fmt = CountdownFormat(rawValue: UserDefaults.standard.string(forKey: Prefs.countdownKey) ?? "")
+            ?? .hhmmss
+        switch fmt {
+        case .ddhhmmss: return String(format: "%02d:%02d:%02d:%02d", d, h, m, s)
+        case .hhmmss:   return String(format: "%02d:%02d:%02d", totalH, m, s)
+        case .hhmm:     return String(format: "%02d:%02d", totalH, m)
+        case .dd:       return d > 0 ? "\(d)d" : "<1d"
+        }
     }
 
     static func resetClock(_ date: Date) -> String {

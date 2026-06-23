@@ -8,7 +8,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var stores: Stores { Stores.shared }
     private var statusItem: NSStatusItem!
     private var tick: Timer?
+    private var animTimer: Timer?
+    private var frameIndex = 0
     private var menuOpen = false
+
+    private var iconChoice: IconChoice {
+        IconChoice(rawValue: UserDefaults.standard.string(forKey: Prefs.iconKey) ?? "") ?? .logo
+    }
+    private var accent: AccentChoice {
+        AccentChoice(rawValue: UserDefaults.standard.string(forKey: Prefs.accentKey) ?? "") ?? .system
+    }
 
     private var showStatus: Bool {
         UserDefaults.standard.object(forKey: Prefs.showStatusKey) == nil ? true
@@ -22,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         HookInstaller.installIfNeeded()
         stores.start()
+        Updater.shared.checkOnLaunch()
         NSApp.setActivationPolicy(.accessory)
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -34,9 +44,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             statusItem.button?.font = NSFont.monospacedDigitSystemFont(ofSize: f.pointSize, weight: .regular)
         }
         refreshButton()
+        updateIcon()
 
         tick = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.refreshButton()
+        }
+        // A faster timer drives the icon animation (and applies a freshly-chosen
+        // icon/colour within a frame). It rests cheaply when nothing's working.
+        animTimer = Timer.scheduledTimer(withTimeInterval: 0.09, repeats: true) { [weak self] _ in
+            self?.updateIcon()
         }
     }
 
@@ -123,23 +139,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleTimer() { UserDefaults.standard.set(!showTimer, forKey: Prefs.showTimerKey) }
     @objc private func refreshNow() { Task { await stores.usage.refresh() } }
     @objc private func quit() { userRequestedQuit = true; NSApp.terminate(nil) }
+    /// Lets the updater terminate the app for an in-place swap (bypasses the
+    /// "closing a window shouldn't quit" guard).
+    func forceQuit() { userRequestedQuit = true }
 
     // MARK: Status-bar button
 
-    /// The menu-bar logo, sized to 16pt and rendered as a template (auto-tinted).
-    private static let menuBarImage: NSImage? = {
-        guard let base = NSImage(named: "MenuBarLogo"), let img = base.copy() as? NSImage else { return nil }
-        let h: CGFloat = 13.5
-        img.size = NSSize(width: img.size.height > 0 ? h * (img.size.width / img.size.height) : h, height: h)
-        img.isTemplate = true
-        return img
-    }()
+    private static let logoBase = NSImage(named: "MenuBarLogo")
+
+    private var wasAnimating = false
+
+    /// Cycles animation frames while any session is working; when idle it always
+    /// settles back on the Anthrocite logo (fading in on the work→idle hand-off),
+    /// whatever animated style is selected. Runs ~11×/sec off `animTimer`.
+    private func updateIcon() {
+        guard let button = statusItem.button else { return }
+        let choice = iconChoice
+        let frames = IconArt.frames(for: choice)
+        let animating = choice.isAnimated && !frames.isEmpty && !stores.status.workingSessions.isEmpty
+
+        if animating {
+            frameIndex = (frameIndex + 1) % frames.count
+            button.image = IconArt.style(frames[frameIndex], color: choice.isColor, accent: accent)
+            wasAnimating = true
+        } else {
+            frameIndex = 0
+            if wasAnimating {
+                fadeButtonImage(button, to: restingImage)   // animation just finished
+            } else {
+                button.image = restingImage
+            }
+            wasAnimating = false
+        }
+    }
+
+    /// The idle icon is always Anthrocite's own mark, regardless of style.
+    private var restingImage: NSImage? { IconArt.style(Self.logoBase, color: false, accent: accent) }
+
+    private func fadeButtonImage(_ button: NSStatusBarButton, to image: NSImage?) {
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.18
+            button.animator().alphaValue = 0
+        }, completionHandler: {
+            button.image = image
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.22
+                button.animator().alphaValue = 1
+            }
+        })
+    }
 
     private var lastTitleKey = ""
 
     private func refreshButton() {
         guard let button = statusItem.button, !menuOpen else { return }
-        button.image = Self.menuBarImage
 
         let title = showStatus ? menuTitle() : nil
         // Key ignores the ticking "Ns" so the timer updates smoothly without a

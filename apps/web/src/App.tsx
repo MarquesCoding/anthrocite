@@ -49,15 +49,17 @@ const swing = { type: "spring" as const, stiffness: 380, damping: 32 };
 
 function Cta({ compact = false }: { compact?: boolean }) {
   const pad = compact ? "py-1.5 text-sm" : "py-3.5 text-[15px]";
-  const minw = compact ? "min-w-[116px]" : "min-w-[164px]";
+  const minw = compact ? "min-w-[104px]" : "min-w-[140px] sm:min-w-[164px]";
   const sz = compact ? 16 : 19;
-  const base = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 font-medium transition-colors ${pad} ${minw}`;
+  const base = `items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 font-medium transition-colors ${pad} ${minw}`;
+  // In the compact nav, hide GitHub on phones so the pill never overflows.
+  const ghDisplay = compact ? "hidden sm:inline-flex" : "inline-flex";
   return (
-    <motion.div layoutId="cta" transition={swing} className="flex items-center gap-2.5">
-      <motion.a layout transition={swing} href={REPO} className={`${base} border border-white/15 text-white/80 hover:border-white/30`}>
+    <motion.div layoutId="cta" transition={swing} className="flex flex-wrap items-center justify-center gap-2.5">
+      <motion.a layout transition={swing} href={REPO} className={`${ghDisplay} ${base} border border-white/15 text-white/80 hover:border-white/30`}>
         <IconBrandGithubFilled size={sz} /> GitHub
       </motion.a>
-      <motion.a layout transition={swing} href={DOWNLOAD} className={`${base} bg-white text-black hover:bg-white/90`}>
+      <motion.a layout transition={swing} href={DOWNLOAD} className={`inline-flex ${base} bg-white text-black hover:bg-white/90`}>
         <IconBrandAppleFilled size={sz} /> Download
       </motion.a>
     </motion.div>
@@ -67,13 +69,13 @@ function Cta({ compact = false }: { compact?: boolean }) {
 function Nav({ inHero }: { inHero: boolean }) {
   return (
     <header className="fixed inset-x-0 top-4 z-50 px-4">
-      <div className="mx-auto flex h-12 max-w-2xl items-center justify-between rounded-full border border-white/10 bg-white/[0.04] px-4 backdrop-blur-xl">
-        <a href="#" className="flex items-center gap-2">
-          <img src="/logo.svg" alt="" className="h-5 w-auto" />
-          <span className="text-[15px] font-semibold tracking-tight">Anthrocite</span>
+      <div className="mx-auto flex h-12 max-w-2xl items-center justify-between gap-2 rounded-full border border-white/10 bg-white/[0.04] pl-4 pr-2 backdrop-blur-xl sm:px-4">
+        <a href="#" className="flex min-w-0 items-center gap-2">
+          <img src="/logo.svg" alt="" className="h-5 w-auto shrink-0" />
+          <span className="truncate font-display text-[15px] font-semibold tracking-tight">Anthrocite</span>
         </a>
-        <div className="flex items-center gap-2">
-          <a href="#features" className="rounded-full px-3 py-1.5 text-sm text-white/65 transition hover:text-white">Features</a>
+        <div className="flex shrink-0 items-center gap-2">
+          <a href="#features" className="hidden rounded-full px-3 py-1.5 text-sm text-white/65 transition hover:text-white sm:block">Features</a>
           {!inHero && <Cta compact />}
         </div>
       </div>
@@ -85,7 +87,7 @@ function Hero({ slotRef, inHero }: { slotRef: React.RefObject<HTMLDivElement | n
   return (
     <section className="relative px-6 pt-36 text-center">
       <motion.div variants={container} initial="hidden" animate="show">
-        <motion.h1 variants={item} className="mx-auto max-w-5xl text-[15vw] font-semibold leading-[0.92] tracking-[-0.04em] sm:text-[112px]">
+        <motion.h1 variants={item} className="mx-auto max-w-5xl font-display text-[15vw] font-semibold leading-[0.92] tracking-[-0.04em] sm:text-[112px]">
           Every agent.
           <br />
           <span className="bg-gradient-to-b from-white via-white to-white/35 bg-clip-text text-transparent">One glance.</span>
@@ -256,7 +258,7 @@ function Features() {
         {features.map((f) => (
           <motion.div variants={item} key={f.title} className="flex flex-col items-center text-center">
             <f.icon size={34} className="text-white/85" />
-            <h3 className="mt-4 text-[17px] font-semibold leading-tight">{f.title}</h3>
+            <h3 className="mt-4 font-display text-[17px] font-semibold leading-tight">{f.title}</h3>
           </motion.div>
         ))}
       </div>
@@ -318,7 +320,7 @@ function Footer() {
         </a>
       </div>
       <p className="mt-10 text-sm text-white/35">© 2026 Anthrocite · MIT licensed</p>
-      <div aria-hidden className="pointer-events-none absolute -bottom-6 left-1/2 -z-0 -translate-x-1/2 select-none text-[20vw] font-bold leading-none tracking-tighter text-white/[0.025]">
+      <div aria-hidden className="pointer-events-none absolute -bottom-6 left-1/2 -z-0 -translate-x-1/2 select-none font-display text-[20vw] font-bold leading-none tracking-tighter text-white/[0.025]">
         Anthrocite
       </div>
     </footer>

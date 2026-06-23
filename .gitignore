@@ -33,3 +33,7 @@ dist/
 *.iml
 arrow.png
 avatar.png
+
+# Local release build
+build-release/
+apps/macos/build/

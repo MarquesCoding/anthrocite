@@ -54,27 +54,50 @@ struct ModelBreakdown: Codable, Sendable, Equatable {
 
     /// Exact cost, pricing each model id with the supplied table.
     func totalCost(_ table: PricingTable) -> Double {
-        byModel.reduce(0) { $0 + $1.value.cost(table.pricing(for: $1.key)) }
+        byModel.reduce(0) { $0 + $1.value.cost(table.pricing(for: ModelKey.model($1.key))) }
     }
 
     /// Keep only models belonging to the given provider (`.all` = no filter).
     func filtered(_ provider: Provider) -> ModelBreakdown {
         guard provider != .all else { return self }
         var b = ModelBreakdown()
-        b.byModel = byModel.filter { Provider.of($0.key) == provider }
+        b.byModel = byModel.filter { ModelKey.origin($0.key) == provider }
         return b
     }
 }
 
-/// Which coding agent a model id belongs to.
+/// Which coding agent produced some usage. Because Xcode's coding intelligence
+/// reuses Claude/Codex *models*, origin can't be inferred from the model id —
+/// it's tagged from the data source and encoded into the breakdown key.
 enum Provider: String, CaseIterable, Identifiable, Sendable {
-    case all = "All", claude = "Claude", codex = "Codex"
+    case all = "All", claude = "Claude", codex = "Codex", xcode = "Xcode"
     var id: String { rawValue }
 
+    /// Legacy fallback: classify a bare model id (used for keys written before
+    /// origin tagging existed, which were Claude- or Codex-only).
     static func of(_ modelID: String) -> Provider {
         let m = modelID.lowercased()
         if m.contains("gpt") || m.contains("codex") || m.hasPrefix("o1")
             || m.hasPrefix("o3") || m.hasPrefix("o4") { return .codex }
         return .claude
+    }
+}
+
+/// Breakdown keys are `"<origin>\u{1}<model>"`, so a model used by more than one
+/// agent (e.g. Claude in both the CLI and Xcode) stays separable. Keys written
+/// before this scheme have no separator and fall back to model-based origin.
+enum ModelKey {
+    static let sep: Character = "\u{1}"
+
+    static func make(_ origin: Provider, _ model: String) -> String {
+        "\(origin.rawValue)\(sep)\(model)"
+    }
+    static func origin(_ key: String) -> Provider {
+        guard let i = key.firstIndex(of: sep) else { return .of(key) }
+        return Provider(rawValue: String(key[..<i])) ?? .of(model(key))
+    }
+    static func model(_ key: String) -> String {
+        guard let i = key.firstIndex(of: sep) else { return key }
+        return String(key[key.index(after: i)...])
     }
 }

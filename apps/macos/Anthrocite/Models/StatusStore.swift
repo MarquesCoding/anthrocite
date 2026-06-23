@@ -44,6 +44,9 @@ final class StatusStore: ObservableObject {
 
     /// Per-session "became active" timestamps, kept across reloads for the timer.
     private var activeSince: [String: Date] = [:]
+    /// Session ids that were working on the previous reload, to detect the
+    /// working → idle transition that fires the completion sound.
+    private var working: Set<String> = []
     private var timer: Timer?
 
     /// A session is "active" (shown) only if its file was written recently.
@@ -145,6 +148,15 @@ final class StatusStore: ObservableObject {
         // Drop timers for sessions that disappeared.
         activeSince = activeSince.filter { seenIDs.contains($0.key) }
         sessions = live.sorted { $0.lastSeen > $1.lastSeen }
+
+        // A session that was working and is now idle (but still present) just
+        // finished a response → chime. Sessions that simply vanished don't.
+        let nowWorking = Set(live.filter(\.isWorking).map(\.id))
+        let present = Set(live.map(\.id))
+        if !working.subtracting(nowWorking).intersection(present).isEmpty {
+            CompletionSound.play()
+        }
+        working = nowWorking
     }
 
     // MARK: Parsing helpers
