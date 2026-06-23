@@ -36,8 +36,8 @@ pnpm build        # turbo build all JS apps
 The macOS app builds with Xcode:
 
 ```sh
-xcodebuild -project apps/macos/ClaudeTracker.xcodeproj \
-  -scheme ClaudeTracker -configuration Release build
+xcodebuild -project apps/macos/Anthrocite.xcodeproj \
+  -scheme Anthrocite -configuration Release build
 ```
 
 ## The app

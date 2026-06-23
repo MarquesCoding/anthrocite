@@ -36,6 +36,7 @@ export default function App() {
         <Nav inHero={inHero} />
         <Hero slotRef={slotRef} inHero={inHero} />
         <Features />
+        <Screenshots />
         <Footer />
       </div>
     </LayoutGroup>
@@ -258,6 +259,48 @@ function Features() {
             <f.icon size={34} className="text-white/85" />
             <h3 className="mt-4 text-[17px] font-semibold leading-tight">{f.title}</h3>
           </motion.div>
+        ))}
+      </div>
+    </motion.section>
+  );
+}
+
+/* Drop PNGs into apps/web/public/screenshots/ (dashboard.png, menu.png,
+   sessions.png). Missing ones hide themselves. */
+const screenshots = [
+  { src: "/screenshots/dashboard.png", caption: "The dashboard — trends, projects & models" },
+  { src: "/screenshots/menu.png", caption: "Live status in the menu bar" },
+  { src: "/screenshots/sessions.png", caption: "Every concurrent session" },
+];
+
+function Screenshots() {
+  return (
+    <motion.section
+      variants={container}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-80px" }}
+      className="mx-auto max-w-6xl px-6 py-16"
+    >
+      <div className="grid gap-5 md:grid-cols-2">
+        {screenshots.map((s, i) => (
+          <motion.figure
+            variants={item}
+            key={s.src}
+            className={`overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] ${i === 0 ? "md:col-span-2" : ""}`}
+          >
+            <img
+              src={s.src}
+              alt={s.caption}
+              loading="lazy"
+              className="w-full"
+              onError={(e) => {
+                const f = e.currentTarget.closest("figure");
+                if (f) (f as HTMLElement).style.display = "none";
+              }}
+            />
+            <figcaption className="px-5 py-3 text-sm text-white/45">{s.caption}</figcaption>
+          </motion.figure>
         ))}
       </div>
     </motion.section>

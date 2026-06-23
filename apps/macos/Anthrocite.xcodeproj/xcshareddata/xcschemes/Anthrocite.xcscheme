@@ -7,8 +7,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1A0000000000000000000005"
                BuildableName = "Anthrocite.app"
-               BlueprintName = "ClaudeTracker"
-               ReferencedContainer = "container:ClaudeTracker.xcodeproj">
+               BlueprintName = "Anthrocite"
+               ReferencedContainer = "container:Anthrocite.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -19,8 +19,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1A0000000000000000000005"
             BuildableName = "Anthrocite.app"
-            BlueprintName = "ClaudeTracker"
-            ReferencedContainer = "container:ClaudeTracker.xcodeproj">
+            BlueprintName = "Anthrocite"
+            ReferencedContainer = "container:Anthrocite.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>

@@ -27,8 +27,8 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild \
-            -project ClaudeTracker.xcodeproj \
-            -scheme ClaudeTracker \
+            -project Anthrocite.xcodeproj \
+            -scheme Anthrocite \
             -configuration Release \
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="-" \
