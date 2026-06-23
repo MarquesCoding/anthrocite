@@ -173,8 +173,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    /// The idle icon is always Anthrocite's own mark, regardless of style.
-    private var restingImage: NSImage? { IconArt.style(Self.logoBase, color: false, accent: accent) }
+    /// The idle icon is always Anthrocite's own mark, regardless of style. The
+    /// crab ignores the accent (its picker is disabled), so its resting logo
+    /// uses the default template colour instead of a stale accent (e.g. orange).
+    private var restingImage: NSImage? {
+        let effective: AccentChoice = iconChoice.isColor ? .system : accent
+        return IconArt.style(Self.logoBase, color: false, accent: effective)
+    }
 
     private func fadeButtonImage(_ button: NSStatusBarButton, to image: NSImage?) {
         NSAnimationContext.runAnimationGroup({ ctx in

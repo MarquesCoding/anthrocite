@@ -64,4 +64,5 @@ enum Prefs {
     static let scopeKey = "usageScope"
     static let soundKey = "playCompletionSound"
     static let countdownKey = "countdownFormat"
+    static let showCostKey = "showCost"
 }

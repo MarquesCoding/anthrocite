@@ -39,6 +39,7 @@ struct MenuContentView: View {
     @ObservedObject var status: StatusStore
     @ObservedObject var pricing: PricingStore
     @AppStorage(Prefs.scopeKey) private var scopeRaw = Scope.today.rawValue
+    @AppStorage(Prefs.showCostKey) private var showCost = true
 
     private var scope: Scope { Scope(rawValue: scopeRaw) ?? .today }
     private var breakdown: ModelBreakdown {
@@ -120,13 +121,15 @@ struct MenuContentView: View {
             Text("Usage").font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
             ScopeSelector(scope: Binding(get: { scope }, set: { scopeRaw = $0.rawValue })).frame(height: 22)
             row("Tokens", Fmt.tokens(breakdown.totalTokens), bold: true)
-            row("Cost", costString, bold: true)
-            let c = breakdown.combined
-            if c.total > 0 {
-                row("Input", Fmt.tokens(c.input))
-                row("Output", Fmt.tokens(c.output))
-                row("Cache write", Fmt.tokens(c.cacheWrite))
-                row("Cache read", Fmt.tokens(c.cacheRead))
+            if showCost {
+                row("Cost", costString, bold: true)
+                let c = breakdown.combined
+                if c.total > 0 {
+                    row("Input", Fmt.tokens(c.input))
+                    row("Output", Fmt.tokens(c.output))
+                    row("Cache write", Fmt.tokens(c.cacheWrite))
+                    row("Cache read", Fmt.tokens(c.cacheRead))
+                }
             }
         }
     }

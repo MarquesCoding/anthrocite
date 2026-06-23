@@ -214,6 +214,7 @@ private struct GeneralPane: View {
     @AppStorage(Prefs.iconKey) private var iconRaw = IconChoice.logo.rawValue
     @AppStorage(Prefs.accentKey) private var accentRaw = AccentChoice.system.rawValue
     @AppStorage(Prefs.soundKey) private var playSound = false
+    @AppStorage(Prefs.showCostKey) private var showCost = true
     @AppStorage(Prefs.countdownKey) private var countdownRaw = CountdownFormat.hhmmss.rawValue
     @ObservedObject private var updater = Updater.shared
 
@@ -238,6 +239,7 @@ private struct GeneralPane: View {
                 }
                 Toggle("Show status text", isOn: $showStatus)
                 Toggle("Show timer", isOn: $showTimer).disabled(!showStatus)
+                Toggle("Show cost", isOn: $showCost)
                 Toggle("Play a sound when a response completes", isOn: $playSound)
             }
             Section {
