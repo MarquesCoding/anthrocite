@@ -272,7 +272,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Anthrocite;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 0.1.10;
+				MARKETING_VERSION = 0.1.11;
 				PRODUCT_BUNDLE_IDENTIFIER = app.anthrocite.Anthrocite;
 				PRODUCT_NAME = Anthrocite;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -295,7 +295,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Anthrocite;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 0.1.10;
+				MARKETING_VERSION = 0.1.11;
 				PRODUCT_BUNDLE_IDENTIFIER = app.anthrocite.Anthrocite;
 				PRODUCT_NAME = Anthrocite;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -316,7 +316,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1.10;
+				MARKETING_VERSION = 0.1.11;
 				PRODUCT_BUNDLE_IDENTIFIER = "app.anthrocite.Anthrocite.Widget";
 				PRODUCT_NAME = AnthrociteWidget;
 				SDKROOT = macosx;
@@ -341,7 +341,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1.10;
+				MARKETING_VERSION = 0.1.11;
 				PRODUCT_BUNDLE_IDENTIFIER = "app.anthrocite.Anthrocite.Widget";
 				PRODUCT_NAME = AnthrociteWidget;
 				SDKROOT = macosx;

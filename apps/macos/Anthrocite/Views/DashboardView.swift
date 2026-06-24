@@ -286,7 +286,7 @@ private struct ComparePane: View {
 
     private var rows: [UsageRow] {
         let table = pricing.table
-        return [Provider.claude, .codex, .gemini, .xcode].compactMap { p in
+        return [Provider.claude, .codex, .gemini].compactMap { p in
             let b = usage.index.total.filtered(p)
             guard b.totalTokens > 0 else { return nil }
             return UsageRow(id: p.rawValue, name: p.rawValue, tokens: b.totalTokens, cost: b.totalCost(table))
@@ -399,12 +399,10 @@ private struct GeneralPane: View {
                 }
                 integrationRow("Codex", ok: CodexScanner.isDetected,
                                okLabel: "Detected", offLabel: "Not found")
-                integrationRow("Xcode", ok: TranscriptScanner.xcodeDetected,
-                               okLabel: "Detected", offLabel: "Not used yet")
                 integrationRow("Gemini", ok: GeminiScanner.isDetected,
                                okLabel: "Detected", offLabel: "Not used yet")
             } header: { Text("Integrations") }
-            footer: { Text("Claude Code needs the statusLine + SessionEnd hooks for live status. Codex, Xcode and Gemini log usage natively, so they're read automatically once detected.") }
+            footer: { Text("Claude Code needs the statusLine + SessionEnd hooks for live status. Codex and Gemini log usage natively, so they're read automatically once detected.") }
 
             Section {
                 Toggle("Discord Rich Presence", isOn: $discordEnabled)

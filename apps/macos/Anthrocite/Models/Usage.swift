@@ -96,7 +96,7 @@ struct ModelBreakdown: Codable, Sendable, Equatable {
 /// reuses Claude/Codex *models*, origin can't be inferred from the model id —
 /// it's tagged from the data source and encoded into the breakdown key.
 enum Provider: String, CaseIterable, Identifiable, Sendable {
-    case all = "All", claude = "Claude", codex = "Codex", xcode = "Xcode", gemini = "Gemini"
+    case all = "All", claude = "Claude", codex = "Codex", gemini = "Gemini"
     var id: String { rawValue }
 
     /// Legacy fallback: classify a bare model id (used for keys written before

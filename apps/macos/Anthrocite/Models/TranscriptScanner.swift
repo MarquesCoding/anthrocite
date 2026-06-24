@@ -7,19 +7,6 @@ enum TranscriptScanner {
         .homeDirectoryForCurrentUser
         .appending(path: ".claude/projects", directoryHint: .isDirectory)
 
-    /// Xcode 26's coding intelligence runs a bundled Claude agent that writes
-    /// Claude-format JSONL transcripts here — separate from the CLI's `~/.claude`.
-    static let xcodeProjectsDir: URL = FileManager.default
-        .homeDirectoryForCurrentUser
-        .appending(path: "Library/Developer/Xcode/CodingAssistant/ClaudeAgentConfig/projects",
-                   directoryHint: .isDirectory)
-
-    /// True once Xcode's coding intelligence has written transcripts — it logs
-    /// natively (no hook needed), so we just read them.
-    static var xcodeDetected: Bool {
-        FileManager.default.fileExists(atPath: xcodeProjectsDir.path)
-    }
-
     private static let isoFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -39,7 +26,6 @@ enum TranscriptScanner {
     /// data from both Claude Code (the CLI) and Xcode's coding intelligence.
     static func scan(into index: AggregateIndex) -> AggregateIndex {
         var index = scan(dir: projectsDir, origin: .claude, into: index)
-        index = scan(dir: xcodeProjectsDir, origin: .xcode, into: index)
         index.prune()
         return index
     }
