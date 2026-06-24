@@ -10,12 +10,17 @@ import Foundation
 final class DiscordPresence {
     static let shared = DiscordPresence()
 
+    /// The official Anthrocite Discord application (hosts the logo/claude/codex
+    /// art assets), used unless the user overrides it in Settings.
+    static let officialAppID = "1519158752622678136"
+
     struct Activity: Equatable {
         var details: String        // line 1 (project)
         var state: String          // line 2 (status · tokens)
-        var largeImage: String     // asset key (claude/codex)
-        var largeText: String      // hover text (model name)
-        var smallImage: String?    // status dot asset (optional)
+        var largeImage: String     // big image asset key (logo)
+        var largeText: String      // big image hover text
+        var smallImage: String?    // small provider badge (claude/codex)
+        var smallText: String?     // small image hover text (model name)
         var start: Int?            // epoch seconds, for the elapsed timer
     }
 
@@ -96,6 +101,7 @@ final class DiscordPresence {
     private func frame(for a: Activity) -> [String: Any] {
         var assets: [String: Any] = ["large_image": a.largeImage, "large_text": a.largeText]
         if let small = a.smallImage { assets["small_image"] = small }
+        if let smallText = a.smallText { assets["small_text"] = smallText }
         var activity: [String: Any] = ["details": a.details, "state": a.state, "assets": assets]
         if let start = a.start { activity["timestamps"] = ["start": start] }
         return ["cmd": "SET_ACTIVITY", "nonce": UUID().uuidString,

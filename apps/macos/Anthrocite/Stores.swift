@@ -25,6 +25,7 @@ final class Stores {
             guard let self else { return }
             Task { @MainActor in
                 WidgetBridge.update(usage: self.usage, status: self.status, pricing: self.pricing)
+                AlertMonitor.shared.check(status: self.status, usage: self.usage, pricing: self.pricing)
             }
         }
         // Discord Rich Presence (off unless enabled in Settings).
@@ -36,23 +37,37 @@ final class Stores {
 
     private func refreshDiscord() {
         let enabled = UserDefaults.standard.bool(forKey: Prefs.discordKey)
-        let appID = UserDefaults.standard.string(forKey: Prefs.discordAppIDKey) ?? ""
+        let stored = (UserDefaults.standard.string(forKey: Prefs.discordAppIDKey) ?? "")
+            .trimmingCharacters(in: .whitespaces)
+        let appID = stored.isEmpty ? DiscordPresence.officialAppID : stored
         DiscordPresence.shared.configure(enabled: enabled, appID: appID)
-        DiscordPresence.shared.set(enabled && !appID.isEmpty ? discordActivity() : nil)
+        DiscordPresence.shared.set(enabled ? discordActivity() : nil)
     }
 
-    /// Maps the most-recent live session to a Discord activity (nil = clear).
-    private func discordActivity() -> DiscordPresence.Activity? {
-        guard let s = status.workingSessions.first ?? status.primary else { return nil }
+    /// Maps the most-recent live session to a Discord activity. When nothing is
+    /// active it still returns an idle presence so Discord shows Anthrocite.
+    private func discordActivity() -> DiscordPresence.Activity {
+        guard let s = status.workingSessions.first ?? status.primary else {
+            return DiscordPresence.Activity(
+                details: "Idle",
+                state: "No active session",
+                largeImage: "logo",
+                largeText: "Anthrocite",
+                smallImage: nil,
+                smallText: nil,
+                start: nil)
+        }
+        let model = s.model ?? (s.isCodex ? "Codex" : "Claude")
         let tokens = s.context?.usedTokens ?? 0
         let parts = [s.isWorking ? s.statusText : "idle",
                      tokens > 0 ? "\(Fmt.tokens(tokens)) tokens" : nil].compactMap { $0 }
         return DiscordPresence.Activity(
             details: "Working in \(s.project)",
             state: parts.joined(separator: " · "),
-            largeImage: s.isCodex ? "codex" : "claude",
-            largeText: s.model ?? (s.isCodex ? "Codex" : "Claude"),
-            smallImage: nil,
+            largeImage: "logo",                          // Anthrocite mark
+            largeText: "Anthrocite",
+            smallImage: s.isCodex ? "codex" : "claude",  // provider badge
+            smallText: model,                            // model on hover
             start: s.isWorking ? s.activeSince.map { Int($0.timeIntervalSince1970) } : nil)
     }
 }

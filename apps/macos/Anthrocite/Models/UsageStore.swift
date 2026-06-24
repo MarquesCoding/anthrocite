@@ -36,7 +36,7 @@ final class UsageStore: ObservableObject {
         if index.fileOffsets.isEmpty { isIndexing = true }
         let current = index
         let updated = await Task.detached(priority: .utility) {
-            CodexScanner.scan(into: TranscriptScanner.scan(into: current))
+            GeminiScanner.scan(into: CodexScanner.scan(into: TranscriptScanner.scan(into: current)))
         }.value
         index = updated
         lastUpdated = Date()

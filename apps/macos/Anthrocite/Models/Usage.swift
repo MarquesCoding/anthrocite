@@ -47,6 +47,16 @@ struct ModelBreakdown: Codable, Sendable, Equatable {
         byModel[model, default: TokenCounts()] += counts
     }
 
+    mutating func merge(_ other: ModelBreakdown) {
+        for (k, v) in other.byModel { byModel[k, default: TokenCounts()] += v }
+    }
+
+    static func sum(_ breakdowns: [ModelBreakdown]) -> ModelBreakdown {
+        var out = ModelBreakdown()
+        for b in breakdowns { out.merge(b) }
+        return out
+    }
+
     var totalTokens: Int { byModel.values.reduce(0) { $0 + $1.total } }
 
     /// The four token components summed across every model.
@@ -55,6 +65,22 @@ struct ModelBreakdown: Codable, Sendable, Equatable {
     /// Exact cost, pricing each model id with the supplied table.
     func totalCost(_ table: PricingTable) -> Double {
         byModel.reduce(0) { $0 + $1.value.cost(table.pricing(for: ModelKey.model($1.key))) }
+    }
+
+    /// USD saved by prompt caching: each cache-read token would otherwise have
+    /// been billed at the full input rate.
+    func cacheSavings(_ table: PricingTable) -> Double {
+        byModel.reduce(0) { acc, kv in
+            let p = table.pricing(for: ModelKey.model(kv.key))
+            return acc + Double(kv.value.cacheRead) * max(0, p.input - p.cacheRead)
+        }
+    }
+
+    /// Fraction of prompt tokens served from cache (0…1).
+    var cacheHitRate: Double {
+        let c = combined
+        let prompt = c.input + c.cacheRead + c.cacheWrite
+        return prompt > 0 ? Double(c.cacheRead) / Double(prompt) : 0
     }
 
     /// Keep only models belonging to the given provider (`.all` = no filter).
@@ -70,13 +96,14 @@ struct ModelBreakdown: Codable, Sendable, Equatable {
 /// reuses Claude/Codex *models*, origin can't be inferred from the model id —
 /// it's tagged from the data source and encoded into the breakdown key.
 enum Provider: String, CaseIterable, Identifiable, Sendable {
-    case all = "All", claude = "Claude", codex = "Codex", xcode = "Xcode"
+    case all = "All", claude = "Claude", codex = "Codex", xcode = "Xcode", gemini = "Gemini"
     var id: String { rawValue }
 
     /// Legacy fallback: classify a bare model id (used for keys written before
     /// origin tagging existed, which were Claude- or Codex-only).
     static func of(_ modelID: String) -> Provider {
         let m = modelID.lowercased()
+        if m.contains("gemini") || m.contains("gemma") { return .gemini }
         if m.contains("gpt") || m.contains("codex") || m.hasPrefix("o1")
             || m.hasPrefix("o3") || m.hasPrefix("o4") { return .codex }
         return .claude

@@ -50,6 +50,10 @@ struct PricingTable: Sendable, Equatable {
         t.byModel["gpt-5-codex"] = mtok(1.25, 10, 0.125)
         t.byModel["gpt-5"] = mtok(1.25, 10, 0.125)
         t.byModel["gpt"] = mtok(2.5, 10, 0.25)
+        // Google Gemini fallbacks.
+        t.byModel["gemini-2.5-pro"] = mtok(1.25, 10, 0.31)
+        t.byModel["gemini-2.5-flash"] = mtok(0.30, 2.50, 0.075)
+        t.byModel["gemini"] = mtok(1.25, 10, 0.31)
         return t
     }
 }
@@ -92,6 +96,7 @@ final class PricingStore: ObservableObject {
         for (name, value) in root {
             let n = name.lowercased()
             guard n.contains("claude") || n.contains("gpt") || n.contains("codex")
+                    || n.contains("gemini") || n.contains("gemma")
                     || n.hasPrefix("o1") || n.hasPrefix("o3") || n.hasPrefix("o4"),
                   let m = value as? [String: Any],
                   let inCost = (m["input_cost_per_token"] as? NSNumber)?.doubleValue,

@@ -7,7 +7,12 @@ struct DashboardView: View {
     @ObservedObject var pricing: PricingStore
     @ObservedObject private var nav = Navigation.shared
     @AppStorage("dashProvider") private var providerRaw = Provider.all.rawValue
+    @AppStorage("dashRange") private var rangeRaw = TimeRange.all.rawValue
+    @AppStorage("onboardingShown") private var onboardingShown = false
     private var provider: Provider { Provider(rawValue: providerRaw) ?? .all }
+    private var range: TimeRange { TimeRange(rawValue: rangeRaw) ?? .all }
+    /// Panes that get a time-range filter (Compare is all-time by design).
+    private var rangedPane: Bool { [.overview, .projects, .models].contains(nav.pane) }
 
     var body: some View {
         NavigationSplitView {
@@ -23,9 +28,11 @@ struct DashboardView: View {
         } detail: {
             Group {
                 switch nav.pane {
-                case .overview: OverviewPane(usage: usage, pricing: pricing, provider: provider)
+                case .overview: OverviewPane(usage: usage, pricing: pricing, provider: provider, range: range)
                 case .projects: TablePane(title: "Projects", rows: projectRows)
                 case .models:   ModelsPane(rows: modelRows)
+                case .sessions: SessionsPane(usage: usage, pricing: pricing, provider: provider)
+                case .compare:  ComparePane(usage: usage, pricing: pricing)
                 case .general:  GeneralPane()
                 case .pricing:  PricingPane(usage: usage, pricing: pricing)
                 case .about:    AboutPane()
@@ -40,13 +47,25 @@ struct DashboardView: View {
                         .pickerStyle(.segmented).labelsHidden().fixedSize()
                     }
                 }
+                if rangedPane {
+                    ToolbarItem {
+                        Picker("Range", selection: $rangeRaw) {
+                            ForEach(TimeRange.allCases) { Text($0.rawValue).tag($0.rawValue) }
+                        }
+                        .pickerStyle(.segmented).labelsHidden().fixedSize()
+                    }
+                }
             }
+        }
+        .sheet(isPresented: Binding(get: { !onboardingShown },
+                                    set: { if !$0 { onboardingShown = true } })) {
+            OnboardingView()
         }
     }
 
     private var projectRows: [UsageRow] {
         let table = pricing.table
-        return usage.index.byProject.compactMap { name, bd -> UsageRow? in
+        return usage.index.projects(lastDays: range.days).compactMap { name, bd -> UsageRow? in
             let b = bd.filtered(provider)
             guard b.totalTokens > 0 else { return nil }
             return UsageRow(id: name, name: name, tokens: b.totalTokens, cost: b.totalCost(table))
@@ -54,7 +73,7 @@ struct DashboardView: View {
     }
     private var modelRows: [UsageRow] {
         let table = pricing.table
-        return usage.index.total.filtered(provider).byModel.map { key, counts in
+        return usage.index.breakdown(lastDays: range.days).filtered(provider).byModel.map { key, counts in
             let model = ModelKey.model(key)
             // When showing all origins, label shared models with their agent.
             let name = provider == .all && ModelKey.origin(key) != .claude
@@ -95,39 +114,46 @@ private struct OverviewPane: View {
     @ObservedObject var usage: UsageStore
     @ObservedObject var pricing: PricingStore
     let provider: Provider
+    let range: TimeRange
 
     // Stable snapshot so scrolling (which re-evaluates the body) doesn't
     // recompute the charts and retrigger their animations.
-    @State private var s30: [DailyPoint] = []
-    @State private var allTimeTokens = 0
-    @State private var allTimeCost = 0.0
-    @State private var weekTokens = 0
-    @State private var todayTokens = 0
+    @State private var pts: [DailyPoint] = []
+    @State private var rangeTokens = 0
+    @State private var rangeCost = 0.0
+    @State private var cacheSaved = 0.0
+    @State private var avgDaily = 0.0
+    @State private var hitRate = 0.0
+
+    private var chartDays: Int { range.days ?? 90 }
 
     private func recompute() {
         let table = pricing.table
-        s30 = series(usage, table, days: 30, provider: provider)
-        let total = usage.index.total.filtered(provider)
-        allTimeTokens = total.totalTokens
-        allTimeCost = total.totalCost(table)
-        weekTokens = s30.suffix(7).reduce(0) { $0 + $1.tokens }
-        todayTokens = usage.index.todayBreakdown.filtered(provider).totalTokens
+        pts = series(usage, table, days: chartDays, provider: provider)
+        let bd = usage.index.breakdown(lastDays: range.days).filtered(provider)
+        rangeTokens = bd.totalTokens
+        rangeCost = bd.totalCost(table)
+        cacheSaved = bd.cacheSavings(table)
+        hitRate = bd.cacheHitRate
+        avgDaily = Insights.avgDailyCost(usage.index, table, days: 7)
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 Grid(horizontalSpacing: 12, verticalSpacing: 12) {
                     GridRow {
-                        MetricCard(title: "All-time tokens", value: Fmt.tokens(allTimeTokens), icon: "number")
-                        MetricCard(title: "All-time cost", value: Fmt.usd(allTimeCost), icon: "dollarsign.circle")
-                        MetricCard(title: "This week", value: Fmt.tokens(weekTokens), icon: "calendar")
-                        MetricCard(title: "Today", value: Fmt.tokens(todayTokens), icon: "sun.max")
+                        MetricCard(title: "Tokens", value: Fmt.tokens(rangeTokens), icon: "number")
+                        MetricCard(title: "Cost", value: Fmt.usd(rangeCost), icon: "dollarsign.circle")
+                        MetricCard(title: "Cache saved", value: Fmt.usd(cacheSaved), icon: "bolt.badge.clock")
+                        MetricCard(title: "Avg / day", value: Fmt.usd(avgDaily), icon: "calendar")
                     }
                 }
+                Text("Projected ≈ \(Fmt.usd(avgDaily * 30)) this month at recent pace · \(Int((hitRate * 100).rounded()))% cache hit")
+                    .font(.caption).foregroundStyle(.secondary)
 
-                ChartCard(title: "Tokens per day", subtitle: "Last 30 days") {
-                    Chart(s30) { p in
+                ChartCard(title: "Tokens per day", subtitle: "Last \(chartDays) days") {
+                    Chart(pts) { p in
                         AreaMark(x: .value("Day", p.date, unit: .day), y: .value("Tokens", p.tokens))
                             .interpolationMethod(.catmullRom)
                             .foregroundStyle(.linearGradient(colors: [.accentColor.opacity(0.35), .accentColor.opacity(0.02)],
@@ -141,8 +167,8 @@ private struct OverviewPane: View {
                     .frame(height: 220)
                 }
 
-                ChartCard(title: "Cost per day", subtitle: "Last 30 days") {
-                    Chart(s30) { p in
+                ChartCard(title: "Cost per day", subtitle: "Last \(chartDays) days") {
+                    Chart(pts) { p in
                         BarMark(x: .value("Day", p.date, unit: .day), y: .value("Cost", p.cost))
                             .foregroundStyle(.tint)
                             .cornerRadius(3)
@@ -158,6 +184,7 @@ private struct OverviewPane: View {
         .onChange(of: usage.lastUpdated) { _, _ in recompute() }
         .onChange(of: pricing.table) { _, _ in recompute() }
         .onChange(of: provider) { _, _ in recompute() }
+        .onChange(of: range) { _, _ in recompute() }
     }
 }
 
@@ -204,6 +231,99 @@ private struct ModelsPane: View {
     }
 }
 
+// MARK: - Sessions
+
+private struct SessionRow: Identifiable {
+    let id: String
+    let project: String
+    let model: String
+    let date: Date
+    let duration: TimeInterval
+    let tokens: Int
+    let cost: Double
+}
+
+private struct SessionsPane: View {
+    @ObservedObject var usage: UsageStore
+    @ObservedObject var pricing: PricingStore
+    let provider: Provider
+
+    private var rows: [SessionRow] {
+        let table = pricing.table
+        return usage.index.recentSessions().compactMap { s in
+            let b = s.breakdown.filtered(provider)
+            guard b.totalTokens > 0 else { return nil }
+            return SessionRow(id: s.id, project: s.project.isEmpty ? "session" : s.project,
+                              model: ModelKey.model(s.lastModel), date: s.lastTimestamp,
+                              duration: s.duration, tokens: b.totalTokens, cost: b.totalCost(table))
+        }
+    }
+
+    var body: some View {
+        Group {
+            if rows.isEmpty {
+                ContentUnavailableView("No sessions yet", systemImage: "clock.arrow.circlepath")
+            } else {
+                Table(rows) {
+                    TableColumn("Project", value: \.project)
+                    TableColumn("Model") { Text($0.model).foregroundStyle(.secondary) }.width(150)
+                    TableColumn("When") { Text($0.date, format: .relative(presentation: .named)) }.width(110)
+                    TableColumn("Duration") { Text(Fmt.duration($0.duration)) }.width(80)
+                    TableColumn("Tokens") { Text(Fmt.tokens($0.tokens)).monospacedDigit() }.width(80)
+                    TableColumn("Cost") { Text(Fmt.usd($0.cost)).monospacedDigit() }.width(80)
+                }
+            }
+        }
+        .navigationTitle("Sessions")
+    }
+}
+
+// MARK: - Compare
+
+private struct ComparePane: View {
+    @ObservedObject var usage: UsageStore
+    @ObservedObject var pricing: PricingStore
+
+    private var rows: [UsageRow] {
+        let table = pricing.table
+        return [Provider.claude, .codex, .gemini, .xcode].compactMap { p in
+            let b = usage.index.total.filtered(p)
+            guard b.totalTokens > 0 else { return nil }
+            return UsageRow(id: p.rawValue, name: p.rawValue, tokens: b.totalTokens, cost: b.totalCost(table))
+        }.sorted { $0.cost > $1.cost }
+    }
+
+    var body: some View {
+        ScrollView {
+            if rows.isEmpty {
+                ContentUnavailableView("No usage yet", systemImage: "chart.bar.xaxis").padding(.top, 60)
+            } else {
+                VStack(alignment: .leading, spacing: 16) {
+                    ChartCard(title: "Cost by provider", subtitle: "All time") {
+                        Chart(rows) { r in
+                            BarMark(x: .value("Provider", r.name), y: .value("Cost", r.cost))
+                                .foregroundStyle(.tint).cornerRadius(4)
+                                .annotation(position: .top) { Text(Fmt.usd(r.cost)).font(.caption2).foregroundStyle(.secondary) }
+                        }
+                        .frame(height: 200)
+                    }
+                    ChartCard(title: "Tokens by provider", subtitle: "All time") {
+                        Chart(rows) { r in
+                            BarMark(x: .value("Provider", r.name), y: .value("Tokens", r.tokens))
+                                .foregroundStyle(.tint.opacity(0.7)).cornerRadius(4)
+                                .annotation(position: .top) { Text(Fmt.tokens(r.tokens)).font(.caption2).foregroundStyle(.secondary) }
+                        }
+                        .chartYAxis { tokenAxis() }
+                        .frame(height: 200)
+                    }
+                }
+                .padding(20)
+            }
+        }
+        .navigationTitle("Compare")
+    }
+}
+
 // MARK: - Settings panes
 
 private struct GeneralPane: View {
@@ -218,9 +338,15 @@ private struct GeneralPane: View {
     @AppStorage(Prefs.countdownKey) private var countdownRaw = CountdownFormat.hhmmss.rawValue
     @AppStorage(Prefs.discordKey) private var discordEnabled = false
     @AppStorage(Prefs.discordAppIDKey) private var discordAppID = ""
+    @AppStorage(Prefs.menuMetricKey) private var menuMetricRaw = MenuMetric.status.rawValue
+    @AppStorage(Prefs.alertsKey) private var alertsEnabled = false
+    @AppStorage(Prefs.limitThresholdKey) private var limitThreshold = 80
+    @AppStorage(Prefs.spendThresholdKey) private var spendThreshold = 0.0
+    @AppStorage(Prefs.planKey) private var planRaw = ClaudePlan.unspecified.rawValue
     @ObservedObject private var updater = Updater.shared
 
     private var icon: IconChoice { IconChoice(rawValue: iconRaw) ?? .logo }
+    private var menuMetric: MenuMetric { MenuMetric(rawValue: menuMetricRaw) ?? .status }
 
     var body: some View {
         Form {
@@ -236,14 +362,34 @@ private struct GeneralPane: View {
                     ForEach(AccentChoice.allCases) { Text($0.rawValue).tag($0.rawValue) }
                 }
                 .disabled(icon.isColor)   // the crab keeps its own colours
+                Picker("Show", selection: $menuMetricRaw) {
+                    ForEach(MenuMetric.allCases) { Text($0.rawValue).tag($0.rawValue) }
+                }
                 Picker("Limit countdown", selection: $countdownRaw) {
                     ForEach(CountdownFormat.allCases) { Text($0.rawValue).tag($0.rawValue) }
                 }
-                Toggle("Show status text", isOn: $showStatus)
-                Toggle("Show timer", isOn: $showTimer).disabled(!showStatus)
+                Toggle("Show status text", isOn: $showStatus).disabled(menuMetric != .status)
+                Toggle("Show timer", isOn: $showTimer).disabled(!showStatus || menuMetric != .status)
                 Toggle("Show cost", isOn: $showCost)
                 Toggle("Play a sound when a response completes", isOn: $playSound)
             }
+            Section {
+                Toggle("Notify on thresholds", isOn: $alertsEnabled)
+                if alertsEnabled {
+                    Stepper("Rate-limit alert at \(limitThreshold)%", value: $limitThreshold, in: 50...100, step: 5)
+                    LabeledContent("Daily spend alert") {
+                        TextField("$0 = off", value: $spendThreshold, format: .number)
+                            .frame(width: 90).multilineTextAlignment(.trailing).textFieldStyle(.roundedBorder)
+                    }
+                }
+            } header: { Text("Alerts") }
+            footer: { Text("Posts a Notification Center alert when a 5-hour/weekly limit, or today's spend, crosses the threshold. $0 disables the spend alert.") }
+            Section {
+                Picker("Claude plan", selection: $planRaw) {
+                    ForEach(ClaudePlan.allCases) { Text($0.rawValue).tag($0.rawValue) }
+                }
+            } header: { Text("Account") }
+            footer: { Text("For your reference — Anthrocite reads your real rate limits from Claude Code directly.") }
             Section {
                 integrationRow("Claude Code", ok: hooksInstalled,
                                okLabel: "Installed", offLabel: "Not installed")
@@ -255,21 +401,20 @@ private struct GeneralPane: View {
                                okLabel: "Detected", offLabel: "Not found")
                 integrationRow("Xcode", ok: TranscriptScanner.xcodeDetected,
                                okLabel: "Detected", offLabel: "Not used yet")
+                integrationRow("Gemini", ok: GeminiScanner.isDetected,
+                               okLabel: "Detected", offLabel: "Not used yet")
             } header: { Text("Integrations") }
-            footer: { Text("Claude Code needs the statusLine + SessionEnd hooks for live status. Codex and Xcode log usage natively, so they're read automatically once detected.") }
+            footer: { Text("Claude Code needs the statusLine + SessionEnd hooks for live status. Codex, Xcode and Gemini log usage natively, so they're read automatically once detected.") }
 
             Section {
                 Toggle("Discord Rich Presence", isOn: $discordEnabled)
                 if discordEnabled {
-                    TextField("Discord Application ID", text: $discordAppID)
+                    TextField("Application ID (optional override)", text: $discordAppID)
                         .textFieldStyle(.roundedBorder)
                 }
             } header: { Text("Discord") }
             footer: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Shows your current project, model and live token usage in your Discord status.")
-                    Text("Create an app at discord.com/developers, upload Rich Presence art assets named “claude” and “codex”, then paste its Application ID above.")
-                }
+                Text("Shows your current project, model and live token usage in your Discord status. Requires the Discord desktop app to be running. Leave the ID blank to use the official Anthrocite app.")
             }
 
             Section {
@@ -279,7 +424,7 @@ private struct GeneralPane: View {
             footer: { Text("Checks GitHub for a newer signed release and installs it in place.") }
         }
         .formStyle(.grouped)
-        .navigationTitle("General")
+        .navigationTitle("Settings")
     }
 
     private func integrationRow(_ name: String, ok: Bool, okLabel: String, offLabel: String) -> some View {
@@ -314,11 +459,18 @@ private struct GeneralPane: View {
 private struct PricingPane: View {
     @ObservedObject var usage: UsageStore
     @ObservedObject var pricing: PricingStore
-    private let families: [(String, ModelFamily, String)] = [
-        ("Opus", .opus, "claude-opus-4-8"),
-        ("Sonnet", .sonnet, "claude-sonnet-4-6"),
-        ("Haiku", .haiku, "claude-haiku-4-5"),
+
+    // Representative models per provider for the rate card.
+    private let groups: [(String, [(String, String)])] = [
+        ("Claude", [("Opus 4.5", "claude-opus-4-5"),
+                    ("Sonnet 4.5", "claude-sonnet-4-5"),
+                    ("Haiku 4.5", "claude-haiku-4-5")]),
+        ("OpenAI · Codex", [("GPT-5", "gpt-5"),
+                            ("GPT-5 Codex", "gpt-5-codex")]),
+        ("Gemini", [("2.5 Pro", "gemini-2.5-pro"),
+                    ("2.5 Flash", "gemini-2.5-flash")]),
     ]
+
     var body: some View {
         Form {
             Section {
@@ -326,17 +478,29 @@ private struct PricingPane: View {
                 LabeledContent("Projects", value: "\(usage.index.byProject.count)")
                 Button("Rebuild index") { Task { await usage.refresh() } }
             }
-            Section {
-                ForEach(families, id: \.0) { name, _, id in
-                    let p = pricing.table.pricing(for: id)
-                    LabeledContent(name, value: line(p))
+            ForEach(groups, id: \.0) { provider, models in
+                Section(provider) {
+                    ForEach(models, id: \.1) { name, id in
+                        LabeledContent(name, value: line(pricing.table.pricing(for: id)))
+                    }
                 }
+            }
+            Section {
+                Button("Export usage as CSV…") {
+                    UsageExport.saveCSV(UsageExport.csv(usage.index, pricing.table))
+                }
+                Button("Copy summary") {
+                    UsageExport.copy(UsageExport.summary(usage.index, pricing.table))
+                }
+            } header: { Text("Export") }
+            Section {
                 Button("Refresh prices from LiteLLM") { pricing.start() }
-            } header: { Text("Pricing · per million tokens") }
-            footer: { Text("Live rates from LiteLLM, cached locally. The current session uses Claude Code's own exact cost.") }
+            } footer: {
+                Text("Per million tokens. Live rates from LiteLLM, cached locally; the active session uses the agent's own reported cost.")
+            }
         }
         .formStyle(.grouped)
-        .navigationTitle("Pricing")
+        .navigationTitle("Rates")
     }
     private func line(_ p: ModelPricing) -> String {
         func m(_ v: Double) -> String { String(format: "$%g", v * 1_000_000) }

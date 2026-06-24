@@ -67,4 +67,45 @@ enum Prefs {
     static let showCostKey = "showCost"
     static let discordKey = "discordRichPresence"
     static let discordAppIDKey = "discordAppID"
+    static let alertsKey = "alertsEnabled"
+    static let limitThresholdKey = "alertLimitThreshold"
+    static let spendThresholdKey = "alertSpendThreshold"
+    static let menuMetricKey = "menuMetric"
+    static let planKey = "claudePlan"
+}
+
+/// What the menu-bar label shows next to the icon.
+enum MenuMetric: String, CaseIterable, Identifiable {
+    case status = "Status"
+    case costToday = "Today's cost"
+    case fiveHour = "5-hour limit"
+    var id: String { rawValue }
+}
+
+/// Time window for the dashboard's usage views.
+enum TimeRange: String, CaseIterable, Identifiable {
+    case today = "Today"
+    case week = "7 days"
+    case month = "30 days"
+    case all = "All"
+    var id: String { rawValue }
+    /// Number of days, or nil for all-time.
+    var days: Int? {
+        switch self {
+        case .today: return 1
+        case .week:  return 7
+        case .month: return 30
+        case .all:   return nil
+        }
+    }
+}
+
+/// The user's Claude subscription, used to frame limits. Informational.
+enum ClaudePlan: String, CaseIterable, Identifiable {
+    case unspecified = "Not set"
+    case pro = "Pro"
+    case max5 = "Max 5×"
+    case max20 = "Max 20×"
+    case api = "API / Console"
+    var id: String { rawValue }
 }

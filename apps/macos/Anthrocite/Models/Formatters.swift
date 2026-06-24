@@ -37,6 +37,16 @@ enum Fmt {
         }
     }
 
+    /// A short human duration: "45s", "12m", "1h 23m", "2d 4h".
+    static func duration(_ secs: TimeInterval) -> String {
+        let s = Int(secs)
+        if s < 60 { return "\(s)s" }
+        let m = s / 60, h = m / 60, d = h / 24
+        if d > 0 { return "\(d)d \(h % 24)h" }
+        if h > 0 { return "\(h)h \(m % 60)m" }
+        return "\(m)m"
+    }
+
     static func resetClock(_ date: Date) -> String {
         let f = DateFormatter()
         f.dateFormat = "EEE h:mm a"

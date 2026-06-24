@@ -29,7 +29,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        HookInstaller.installIfNeeded()
+        // Existing users (hooks already present) skip onboarding.
+        if HookInstaller.isInstalled { UserDefaults.standard.set(true, forKey: "onboardingShown") }
+        if UserDefaults.standard.bool(forKey: "onboardingShown") {
+            HookInstaller.installIfNeeded()
+        } else {
+            // First run: show the welcome window (it installs the integration).
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                self?.showDashboard(.overview)
+            }
+        }
         stores.start()
         Updater.shared.checkOnLaunch()
         NSApp.setActivationPolicy(.accessory)
@@ -244,7 +253,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         })
     }
 
+    private var menuMetric: MenuMetric {
+        MenuMetric(rawValue: UserDefaults.standard.string(forKey: Prefs.menuMetricKey) ?? "") ?? .status
+    }
+
     private func menuTitle() -> String? {
+        switch menuMetric {
+        case .costToday:
+            return Fmt.usd(stores.usage.index.todayBreakdown.totalCost(stores.pricing.table))
+        case .fiveHour:
+            return stores.status.fiveHour.map { "5h \(Int($0.usedPercentage.rounded()))%" }
+        case .status:
+            return statusTitle()
+        }
+    }
+
+    private func statusTitle() -> String? {
         let working = stores.status.workingSessions
         switch working.count {
         case 0: return nil
