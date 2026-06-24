@@ -65,4 +65,6 @@ enum Prefs {
     static let soundKey = "playCompletionSound"
     static let countdownKey = "countdownFormat"
     static let showCostKey = "showCost"
+    static let discordKey = "discordRichPresence"
+    static let discordAppIDKey = "discordAppID"
 }

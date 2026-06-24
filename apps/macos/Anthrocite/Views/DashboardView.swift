@@ -216,6 +216,8 @@ private struct GeneralPane: View {
     @AppStorage(Prefs.soundKey) private var playSound = false
     @AppStorage(Prefs.showCostKey) private var showCost = true
     @AppStorage(Prefs.countdownKey) private var countdownRaw = CountdownFormat.hhmmss.rawValue
+    @AppStorage(Prefs.discordKey) private var discordEnabled = false
+    @AppStorage(Prefs.discordAppIDKey) private var discordAppID = ""
     @ObservedObject private var updater = Updater.shared
 
     private var icon: IconChoice { IconChoice(rawValue: iconRaw) ?? .logo }
@@ -255,6 +257,20 @@ private struct GeneralPane: View {
                                okLabel: "Detected", offLabel: "Not used yet")
             } header: { Text("Integrations") }
             footer: { Text("Claude Code needs the statusLine + SessionEnd hooks for live status. Codex and Xcode log usage natively, so they're read automatically once detected.") }
+
+            Section {
+                Toggle("Discord Rich Presence", isOn: $discordEnabled)
+                if discordEnabled {
+                    TextField("Discord Application ID", text: $discordAppID)
+                        .textFieldStyle(.roundedBorder)
+                }
+            } header: { Text("Discord") }
+            footer: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Shows your current project, model and live token usage in your Discord status.")
+                    Text("Create an app at discord.com/developers, upload Rich Presence art assets named “claude” and “codex”, then paste its Application ID above.")
+                }
+            }
 
             Section {
                 LabeledContent("Current version", value: "\(AppInfo.version) (\(AppInfo.build))")
