@@ -14,6 +14,7 @@ import {
   IconWifi,
   IconAdjustmentsFilled,
 } from "@tabler/icons-react";
+import { Privacy, Terms } from "./Legal";
 
 const REPO = "https://github.com/MarquesCoding/anthrocite";
 // Always resolves to the newest release's DMG asset.
@@ -29,6 +30,13 @@ const item: Variants = {
 };
 
 export default function App() {
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  if (path === "/privacy") return <Privacy />;
+  if (path === "/terms") return <Terms />;
+  return <Landing />;
+}
+
+function Landing() {
   const slotRef = useRef<HTMLDivElement>(null);
   const inHero = useInView(slotRef, { margin: "-72px 0px 0px 0px" });
   return (
@@ -319,7 +327,11 @@ function Footer() {
           <IconBrandGithubFilled size={22} />
         </a>
       </div>
-      <p className="mt-10 text-sm text-white/35">© 2026 Anthrocite · MIT licensed</p>
+      <p className="mt-10 text-sm text-white/35">
+        © 2026 Anthrocite · MIT licensed ·{" "}
+        <a href="/privacy" className="transition hover:text-white/70">Privacy</a> ·{" "}
+        <a href="/terms" className="transition hover:text-white/70">Terms</a>
+      </p>
       <div aria-hidden className="pointer-events-none absolute -bottom-6 left-1/2 -z-0 -translate-x-1/2 select-none font-display text-[20vw] font-bold leading-none tracking-tighter text-white/[0.025]">
         Anthrocite
       </div>

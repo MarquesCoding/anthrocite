@@ -343,6 +343,8 @@ private struct GeneralPane: View {
     @AppStorage(Prefs.limitThresholdKey) private var limitThreshold = 80
     @AppStorage(Prefs.spendThresholdKey) private var spendThreshold = 0.0
     @AppStorage(Prefs.planKey) private var planRaw = ClaudePlan.unspecified.rawValue
+    @AppStorage(Prefs.leaderboardKey) private var leaderboardOptIn = false
+    @AppStorage(Prefs.leaderboardNameKey) private var leaderboardName = ""
     @ObservedObject private var updater = Updater.shared
 
     private var icon: IconChoice { IconChoice(rawValue: iconRaw) ?? .logo }
@@ -390,6 +392,20 @@ private struct GeneralPane: View {
                 }
             } header: { Text("Account") }
             footer: { Text("For your reference — Anthrocite reads your real rate limits from Claude Code directly.") }
+
+            Section {
+                Toggle("Join the leaderboard", isOn: $leaderboardOptIn)
+                if leaderboardOptIn {
+                    TextField("Display name (optional)", text: $leaderboardName)
+                        .textFieldStyle(.roundedBorder)
+                    HStack(spacing: 6) {
+                        Link("Privacy", destination: AppInfo.privacyURL)
+                        Text("·").foregroundStyle(.tertiary)
+                        Link("Terms", destination: AppInfo.termsURL)
+                    }.font(.caption)
+                }
+            } header: { Text("Leaderboard") }
+            footer: { Text("Opt in to share only your token usage and model names — under an anonymous device id, with no projects, paths, costs or personal data. Off by default. (Coming soon.)") }
             Section {
                 integrationRow("Claude Code", ok: hooksInstalled,
                                okLabel: "Installed", offLabel: "Not installed")
@@ -525,6 +541,13 @@ private struct AboutPane: View {
                     Label("anthrocite.app", systemImage: "globe")
                 }
                 .buttonStyle(.bordered)
+
+                HStack(spacing: 8) {
+                    Link("Privacy", destination: AppInfo.privacyURL)
+                    Text("·").foregroundStyle(.tertiary)
+                    Link("Terms", destination: AppInfo.termsURL)
+                }
+                .font(.caption).foregroundStyle(.secondary)
 
                 GroupBox {
                     VStack(spacing: 0) {

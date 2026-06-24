@@ -7,6 +7,8 @@ enum AppInfo {
     static let tagline = "Usage & status for your AI coding agents"
     static let website = URL(string: "https://anthrocite.app")!
     static let githubURL = URL(string: "https://github.com/MarquesCoding/anthrocite")!
+    static let privacyURL = URL(string: "https://anthrocite.app/privacy")!
+    static let termsURL = URL(string: "https://anthrocite.app/terms")!
     static let license = "MIT License"
 
     struct Credit: Identifiable {

@@ -72,6 +72,8 @@ enum Prefs {
     static let spendThresholdKey = "alertSpendThreshold"
     static let menuMetricKey = "menuMetric"
     static let planKey = "claudePlan"
+    static let leaderboardKey = "leaderboardOptIn"
+    static let leaderboardNameKey = "leaderboardName"
 }
 
 /// What the menu-bar label shows next to the icon.
